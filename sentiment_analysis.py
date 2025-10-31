@@ -1,54 +1,61 @@
+import streamlit as st
+from textblob import TextBlob
 import fitz  # PyMuPDF for PDF reading
 from docx import Document
-from textblob import TextBlob
-import tkinter as tk
-from tkinter import filedialog
+import io
+
+st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="🧠")
+
+st.title("🧠 Document Sentiment Analysis App")
+st.write("Upload a **PDF** or **Word (.docx)** document to analyze its overall sentiment.")
 
 # Function to read .docx files
-def read_docx(file_path):
-    doc = Document(file_path)
-    text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])  # Extract non-empty lines
+def read_docx(file):
+    doc = Document(file)
+    text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
     return text
 
 # Function to read .pdf files
-def read_pdf(file_path):
-    doc = fitz.open(file_path)
-    text = "\n".join([page.get_text("text") for page in doc if page.get_text("text").strip()])  # Extract non-empty lines
+def read_pdf(file):
+    pdf_bytes = file.read()
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    text = "\n".join([page.get_text("text") for page in doc if page.get_text("text").strip()])
     return text
 
-# Function for sentiment analysis (entire document)
+# Function for sentiment analysis
 def get_sentiment(text):
     sentiment_score = TextBlob(text).sentiment.polarity
     if sentiment_score > 0.2:
-        sentiment_category = "Positive"
+        sentiment_category = "Positive 😊"
     elif sentiment_score < -0.2:
-        sentiment_category = "Negative"
+        sentiment_category = "Negative 😔"
     else:
-        sentiment_category = "Neutral"
+        sentiment_category = "Neutral 😐"
     return sentiment_score, sentiment_category
 
-# Open file dialog to select file
-root = tk.Tk()
-root.withdraw()  # Hide the root window
-file_path = filedialog.askopenfilename(filetypes=[("Word Documents", "*.docx"), ("PDF Files", "*.pdf")])
+# File uploader
+uploaded_file = st.file_uploader("📁 Choose a PDF or Word file", type=["pdf", "docx"])
 
-if not file_path:
-    print("No file selected. Exiting.")
-    exit()
+if uploaded_file is not None:
+    # Extract text
+    if uploaded_file.name.endswith(".docx"):
+        text_data = read_docx(uploaded_file)
+    elif uploaded_file.name.endswith(".pdf"):
+        text_data = read_pdf(uploaded_file)
+    else:
+        st.error("Unsupported file format.")
+        st.stop()
 
-# Determine file type and extract text
-if file_path.endswith(".docx"):
-    text_data = read_docx(file_path)
-elif file_path.endswith(".pdf"):
-    text_data = read_pdf(file_path)
-else:
-    print("Unsupported file format.")
-    exit()
+    # Perform sentiment analysis
+    with st.spinner("Analyzing sentiment..."):
+        sentiment_score, sentiment_category = get_sentiment(text_data)
 
-# Perform sentiment analysis on the entire document
-sentiment_score, sentiment_category = get_sentiment(text_data)
+    # Display results
+    st.subheader("📊 Sentiment Analysis Results")
+    st.write(f"**Sentiment Score:** {sentiment_score:.4f}")
+    st.write(f"**Overall Sentiment:** {sentiment_category}")
 
-# Print results in console
-print("\nSentiment Analysis Results for the Entire Document:")
-print(f"Sentiment Score: {sentiment_score:.6f}")
-print(f"Sentiment Category: {sentiment_category}")
+    # Optional: Show a small preview of the document
+    st.subheader("📝 Document Preview")
+    st.text_area("Extracted Text (First 1000 characters):", text_data[:1000])
+
