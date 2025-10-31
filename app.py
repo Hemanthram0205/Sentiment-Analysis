@@ -58,4 +58,3 @@ if uploaded_file is not None:
     # Optional: Show a small preview of the document
     st.subheader("📝 Document Preview")
     st.text_area("Extracted Text (First 1000 characters):", text_data[:1000])
-
