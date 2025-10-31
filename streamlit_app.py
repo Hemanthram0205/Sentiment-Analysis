@@ -1,8 +1,7 @@
 import streamlit as st
 from textblob import TextBlob
-import fitz  # PyMuPDF for PDF reading
 from docx import Document
-import io
+import pdfplumber
 
 st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="🧠")
 
@@ -15,11 +14,14 @@ def read_docx(file):
     text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
     return text
 
-# Function to read .pdf files
+# Function to read .pdf files using pdfplumber
 def read_pdf(file):
-    pdf_bytes = file.read()
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    text = "\n".join([page.get_text("text") for page in doc if page.get_text("text").strip()])
+    text = ""
+    with pdfplumber.open(file) as pdf:
+        for page in pdf.pages:
+            extracted_text = page.extract_text()
+            if extracted_text:
+                text += extracted_text + "\n"
     return text
 
 # Function for sentiment analysis
@@ -37,7 +39,7 @@ def get_sentiment(text):
 uploaded_file = st.file_uploader("📁 Choose a PDF or Word file", type=["pdf", "docx"])
 
 if uploaded_file is not None:
-    # Extract text
+    # Extract text based on file type
     if uploaded_file.name.endswith(".docx"):
         text_data = read_docx(uploaded_file)
     elif uploaded_file.name.endswith(".pdf"):
@@ -58,3 +60,4 @@ if uploaded_file is not None:
     # Optional: Show a small preview of the document
     st.subheader("📝 Document Preview")
     st.text_area("Extracted Text (First 1000 characters):", text_data[:1000])
+
