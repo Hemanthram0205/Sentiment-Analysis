@@ -1,6 +1,6 @@
 import streamlit as st
 from textblob import TextBlob
-import fitz  # PyMuPDF for PDF reading
+import pdfplumber   # instead of fitz / PyMuPDF
 from docx import Document
 import io
 
@@ -17,9 +17,12 @@ def read_docx(file):
 
 # Function to read .pdf files
 def read_pdf(file):
-    pdf_bytes = file.read()
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    text = "\n".join([page.get_text("text") for page in doc if page.get_text("text").strip()])
+    text = ""
+    with pdfplumber.open(file) as pdf:
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
     return text
 
 # Function for sentiment analysis
