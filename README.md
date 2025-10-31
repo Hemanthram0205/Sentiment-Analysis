@@ -1,2 +1,2 @@
 # Sentiment-Analysis
-A Python-based tool that performs sentiment analysis on uploaded PDF or Word documents, classifying overall sentiment as positive, negative, or neutral using NLP techniques.
+The Document Sentiment Analysis System is a Python-based NLP project designed to evaluate the emotional tone of complete text documents. Users can upload PDF or Word files, and the program automatically extracts text, processes it, and computes an overall sentiment score using TextBlob. It classifies documents as Positive, Negative, or Neutral, offering a practical and lightweight approach to large-scale sentiment evaluation for business, research, or content analysis.
