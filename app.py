@@ -160,7 +160,7 @@ elif page == "analyze":
 elif page == "about":
     st.title("ℹ️ About This App")
     st.write("""
-    The **Document Sentiment Analyzer** was developed by **Hemanth Ram S**,  
+    The **Document Sentiment Analyzer** was developed by **Hemanth Ram. S**,  
     a Business Analytics student at **PES University, Bengaluru**.
 
     **Objective:**  
@@ -184,4 +184,4 @@ elif page == "contact":
     - 💼 **LinkedIn:** [linkedin.com/in/hemanth-ram-9a6a53247](https://www.linkedin.com/in/hemanth-ram-9a6a53247/)  
     - 🐙 **GitHub:** [github.com/Hemanthram0205](https://github.com/Hemanthram0205)
     """)
-    st.caption("© 2025 Hemanth Ram S | PES University | Built with Streamlit")
+    st.caption("© 2025 Hemanth Ram. S | PES University | Built with Streamlit")
