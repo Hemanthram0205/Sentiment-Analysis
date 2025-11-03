@@ -1,32 +1,33 @@
 import streamlit as st
 from textblob import TextBlob
-import pdfplumber   # instead of fitz / PyMuPDF
+import pdfplumber
 from docx import Document
 import io
 
 # --- Page Config ---
 st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📊", layout="wide")
 
-# --- Custom Top Navigation Bar ---
+# --- CSS for Top Navigation ---
 st.markdown("""
     <style>
-    /* Navigation bar styling */
     .nav {
         background-color: #2b2b2b;
         overflow: hidden;
         padding: 15px 10px;
         border-radius: 8px;
+        margin-bottom: 30px;
     }
-    .nav a {
-        float: left;
+    .nav button {
+        background-color: transparent;
         color: white;
-        text-align: center;
-        padding: 12px 18px;
-        text-decoration: none;
-        font-size: 17px;
+        border: none;
+        outline: none;
+        padding: 12px 20px;
+        font-size: 16px;
         font-weight: 500;
+        cursor: pointer;
     }
-    .nav a:hover {
+    .nav button:hover {
         background-color: #575757;
         border-radius: 5px;
     }
@@ -41,23 +42,32 @@ st.markdown("""
         float: right;
     }
     </style>
-
-    <div class="nav">
-        <div class="nav-title">📘 Document Sentiment Analyzer</div>
-        <div class="nav-right">
-            <a href="?page=home">Home</a>
-            <a href="?page=analyze">Analyze</a>
-            <a href="?page=about">About Us</a>
-            <a href="?page=contact">Contact</a>
-        </div>
-    </div>
 """, unsafe_allow_html=True)
 
-# --- Get current page from query parameters ---
-query_params = st.query_params
-page = query_params.get("page", ["home"])[0]
+# --- Initialize Session State for Navigation ---
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 
-# --- Function Definitions (Unchanged Original Code) ---
+# --- Navigation Bar Buttons ---
+nav_col1, nav_col2, nav_col3, nav_col4, nav_col5 = st.columns([3, 1, 1, 1, 1])
+with nav_col1:
+    st.markdown('<div class="nav-title">📘 Document Sentiment Analyzer</div>', unsafe_allow_html=True)
+with nav_col2:
+    if st.button("🏠 Home"):
+        st.session_state.page = "home"
+with nav_col3:
+    if st.button("🧠 Analyze"):
+        st.session_state.page = "analyze"
+with nav_col4:
+    if st.button("ℹ️ About Us"):
+        st.session_state.page = "about"
+with nav_col5:
+    if st.button("✉️ Contact"):
+        st.session_state.page = "contact"
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# --- Original Function Definitions (Unchanged) ---
 def read_docx(file):
     doc = Document(file)
     text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
@@ -83,21 +93,21 @@ def get_sentiment(text):
     return sentiment_score, sentiment_category
 
 # --- PAGE 1: HOME ---
-if page == "home":
+if st.session_state.page == "home":
     st.title("Welcome to the Document Sentiment Analyzer 👋")
     st.subheader("Understand the tone of your documents instantly!")
     st.write("""
-    Upload your **PDF or Word (.docx)** documents to analyze their sentiment using  
+    Upload your **PDF** or **Word (.docx)** documents to analyze their sentiment using  
     **Natural Language Processing (NLP)** powered by *TextBlob*.
     
     Get an instant breakdown of whether the content is **Positive**, **Negative**, or **Neutral**.
     """)
     st.image("https://cdn-icons-png.flaticon.com/512/4781/4781517.png", width=250)
     st.markdown("---")
-    st.info("Navigate using the top menu to analyze a document or learn more about the app.")
+    st.info("Use the top menu to start analyzing your document or learn more about this app.")
 
 # --- PAGE 2: ANALYZE DOCUMENT (Your Original Code, Unchanged) ---
-elif page == "analyze":
+elif st.session_state.page == "analyze":
     st.title("🧠 Analyze Your Document")
     st.write("Upload a **PDF** or **Word (.docx)** document to analyze its overall sentiment.")
 
@@ -127,22 +137,22 @@ elif page == "analyze":
         st.text_area("Extracted Text (First 1000 characters):", text_data[:1000])
 
 # --- PAGE 3: ABOUT US ---
-elif page == "about":
+elif st.session_state.page == "about":
     st.title("ℹ️ About This App")
     st.write("""
-    This app was created by **Hemanth Ram. S**,  
+    This app was created by **Hemanth Ram S**,  
     a Business Analytics student at **PES University, Bengaluru**.
 
     It uses:
     - 🧠 **TextBlob** for sentiment analysis  
     - 📄 **pdfplumber** & **python-docx** for text extraction  
-    - 🎨 **Streamlit** for building a simple yet interactive user experience  
+    - 🎨 **Streamlit** for a simple, interactive interface  
 
     The purpose of this app is to help users instantly detect the tone of any text-based document.
     """)
 
 # --- PAGE 4: CONTACT ---
-elif page == "contact":
+elif st.session_state.page == "contact":
     st.title("✉️ Connect With Me")
     st.write("""
     I'd love to hear your feedback or discuss collaboration opportunities!  
