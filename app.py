@@ -3,29 +3,31 @@ from textblob import TextBlob
 import pdfplumber
 from docx import Document
 
-# --- Page Config ---
 st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📘", layout="wide")
 
-# --- Light & Professional Navigation Styling ---
+# --- Professional Light Navbar ---
 st.markdown("""
     <style>
     .navbar {
-        background-color: #f5f5f5;
-        padding: 14px 25px;
-        border-radius: 8px;
+        background-color: #f9f9f9;
+        padding: 14px 40px;
+        border-bottom: 2px solid #e0e0e0;
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
-        gap: 25px;
+        border-radius: 6px;
         margin-bottom: 25px;
-        border: 1px solid #ddd;
     }
-    .nav-title {
-        color: #004080;
+    .nav-left {
+        color: #003366;
         font-size: 20px;
         font-weight: 700;
-        margin-right: 40px;
         font-family: 'Segoe UI', sans-serif;
+    }
+    .nav-right {
+        display: flex;
+        gap: 25px;
+        align-items: center;
     }
     .nav-item {
         color: #004080;
@@ -33,13 +35,13 @@ st.markdown("""
         font-weight: 500;
         font-size: 16px;
         font-family: 'Segoe UI', sans-serif;
-        padding: 8px 16px;
-        border-radius: 6px;
+        padding: 6px 14px;
+        border-radius: 5px;
         transition: 0.3s ease;
     }
     .nav-item:hover {
         background-color: #e6f0ff;
-        color: #003366;
+        color: #002b80;
     }
     .active {
         background-color: #cce0ff;
@@ -47,54 +49,34 @@ st.markdown("""
         font-weight: 600;
     }
     .separator {
-        color: #888;
+        color: #999;
         font-weight: 400;
         font-size: 18px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- Initialize Page in Session ---
+# --- Session State ---
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
-# --- Navigation Bar ---
-def nav_button(label, key, icon=""):
-    active_class = "active" if st.session_state.page == key else ""
-    button_html = f"<a class='nav-item {active_class}' href='#' onclick=\"window.parent.postMessage('{key}', '*')\">{icon} {label}</a>"
-    return button_html
-
+# --- Navbar Layout ---
 st.markdown(f"""
     <div class="navbar">
-        <div class="nav-title">📘 Document Sentiment Analyzer</div>
-        {nav_button('Home', 'home', '🏠')}
-        <span class="separator">|</span>
-        {nav_button('Analyze', 'analyze', '🧠')}
-        <span class="separator">|</span>
-        {nav_button('About Us', 'about', 'ℹ️')}
-        <span class="separator">|</span>
-        {nav_button('Contact', 'contact', '✉️')}
+        <div class="nav-left">📘 Document Sentiment Analyzer</div>
+        <div class="nav-right">
+            <a class="nav-item {'active' if st.session_state.page=='home' else ''}" href="#" onclick="window.parent.postMessage('home', '*')">🏠 Home</a>
+            <span class="separator">|</span>
+            <a class="nav-item {'active' if st.session_state.page=='analyze' else ''}" href="#" onclick="window.parent.postMessage('analyze', '*')">🧠 Analyze</a>
+            <span class="separator">|</span>
+            <a class="nav-item {'active' if st.session_state.page=='about' else ''}" href="#" onclick="window.parent.postMessage('about', '*')">ℹ️ About Us</a>
+            <span class="separator">|</span>
+            <a class="nav-item {'active' if st.session_state.page=='contact' else ''}" href="#" onclick="window.parent.postMessage('contact', '*')">✉️ Contact</a>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
-# --- Button-Based Navigation ---
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    if st.button("🏠 Home"):
-        st.session_state.page = "home"
-with col2:
-    if st.button("🧠 Analyze"):
-        st.session_state.page = "analyze"
-with col3:
-    if st.button("ℹ️ About Us"):
-        st.session_state.page = "about"
-with col4:
-    if st.button("✉️ Contact"):
-        st.session_state.page = "contact"
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# --- Core Functions (Original Code) ---
+# --- Core Functions ---
 def read_docx(file):
     doc = Document(file)
     return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
@@ -118,22 +100,37 @@ def get_sentiment(text):
         category = "Neutral 😐"
     return score, category
 
-# --- PAGE: HOME ---
+# --- Page Switching Logic ---
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    if st.button("🏠 Home"):
+        st.session_state.page = "home"
+with col2:
+    if st.button("🧠 Analyze"):
+        st.session_state.page = "analyze"
+with col3:
+    if st.button("ℹ️ About Us"):
+        st.session_state.page = "about"
+with col4:
+    if st.button("✉️ Contact"):
+        st.session_state.page = "contact"
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# --- HOME PAGE ---
 if st.session_state.page == "home":
     st.title("Welcome to the Document Sentiment Analyzer 👋")
-    st.subheader("Understand the tone of your documents instantly")
     st.write("""
-    This web app helps you analyze the **sentiment** of any document — academic papers, reports, reviews, or essays —  
-    by detecting whether the tone is **positive**, **negative**, or **neutral** using **Natural Language Processing (NLP)** techniques.
+    This tool analyzes the **sentiment** of your uploaded documents — academic papers, reports, or reviews —  
+    and classifies them as **Positive**, **Negative**, or **Neutral** using NLP techniques.
     """)
-    st.image("https://cdn-icons-png.flaticon.com/512/4781/4781517.png", width=220)
-    st.info("Use the top menu to start analyzing your document or learn more about this project.")
+    st.image("https://cdn-icons-png.flaticon.com/512/4781/4781517.png", width=200)
+    st.info("Use the navigation bar above to start analyzing your document or learn more about this project.")
 
-# --- PAGE: ANALYZE ---
+# --- ANALYZE PAGE ---
 elif st.session_state.page == "analyze":
     st.title("🧠 Document Sentiment Analysis")
     st.write("Upload a **PDF** or **Word (.docx)** document to analyze its overall sentiment.")
-    
     uploaded_file = st.file_uploader("📁 Choose a file", type=["pdf", "docx"])
     if uploaded_file:
         text_data = read_docx(uploaded_file) if uploaded_file.name.endswith(".docx") else read_pdf(uploaded_file)
@@ -145,30 +142,26 @@ elif st.session_state.page == "analyze":
         st.subheader("📝 Document Preview")
         st.text_area("Extracted Text (First 1000 characters):", text_data[:1000])
 
-# --- PAGE: ABOUT US ---
+# --- ABOUT US PAGE ---
 elif st.session_state.page == "about":
     st.title("ℹ️ About This Project")
     st.write("""
-    This project was developed by **Hemanth Ram. S**,  
-    a BBA (Hons) Business Analytics student at **PES University, Bengaluru**.
-    
-    **Technologies Used**
-    - 🧠 *TextBlob* – Sentiment Analysis  
-    - 📄 *pdfplumber* & *python-docx* – Text Extraction  
-    - 🎨 *Streamlit* – Web App Interface  
-    
-    The goal is to make sentiment analysis tools accessible for educational and analytical purposes.
+    Developed by **Hemanth Ram S**,  
+    BBA (Hons) Business Analytics student at **PES University, Bengaluru**.
+
+    **Tech Stack**
+    - 🧠 TextBlob – Sentiment Analysis  
+    - 📄 pdfplumber / python-docx – Text Extraction  
+    - 🌐 Streamlit – Web App Framework
     """)
 
-# --- PAGE: CONTACT ---
+# --- CONTACT PAGE ---
 elif st.session_state.page == "contact":
     st.title("✉️ Contact")
     st.write("""
-    For collaborations or academic discussions, feel free to reach out:
-    """)
-    st.markdown("""
-    - 📧 **Email:** [hemanthramhrs@gmail.com](mailto:hemanthramhrs@gmail.com)  
-    - 💼 **LinkedIn:** [linkedin.com/in/hemanth-ram-9a6a53247](https://www.linkedin.com/in/hemanth-ram-9a6a53247/)  
+    For collaborations or academic discussions:
+    - 📧 **Email:** [hemanthramhrs@gmail.com](mailto:hemanthramhrs@gmail.com)
+    - 💼 **LinkedIn:** [linkedin.com/in/hemanth-ram-9a6a53247](https://linkedin.com/in/hemanth-ram-9a6a53247)
     - 🐙 **GitHub:** [github.com/Hemanthram0205](https://github.com/Hemanthram0205)
     """)
-    st.caption("💡 Built with Streamlit | Version 2.0 | Designed by Hemanth Ram. S")
+    st.caption("Built with ❤️ using Streamlit | Designed by Hemanth Ram S")
