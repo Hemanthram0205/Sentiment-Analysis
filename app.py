@@ -2,69 +2,70 @@ import streamlit as st
 from textblob import TextBlob
 import pdfplumber
 from docx import Document
+import io
 
-st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📘", layout="wide")
+# --- Page Config ---
+st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📊", layout="wide")
 
-# --- Professional Light Navbar ---
+# --- Elegant Professional Navbar Styling ---
 st.markdown("""
     <style>
-    .navbar {
-        background-color: #f9f9f9;
-        padding: 14px 40px;
-        border-bottom: 2px solid #e0e0e0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-radius: 6px;
-        margin-bottom: 25px;
+    body {
+        background-color: #f8f9fa;
     }
-    .nav-left {
-        color: #003366;
+    .navbar {
+        background-color: #ffffff;
+        border: 1px solid #dcdcdc;
+        padding: 14px 25px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 30px;
+        margin-bottom: 35px;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    .nav-title {
+        color: #004080;
         font-size: 20px;
         font-weight: 700;
+        margin-right: 30px;
         font-family: 'Segoe UI', sans-serif;
-    }
-    .nav-right {
-        display: flex;
-        gap: 25px;
-        align-items: center;
     }
     .nav-item {
         color: #004080;
         text-decoration: none;
         font-weight: 500;
-        font-size: 16px;
-        font-family: 'Segoe UI', sans-serif;
-        padding: 6px 14px;
+        padding: 6px 16px;
         border-radius: 5px;
-        transition: 0.3s ease;
+        transition: all 0.3s ease;
+        font-family: 'Segoe UI', sans-serif;
     }
     .nav-item:hover {
         background-color: #e6f0ff;
-        color: #002b80;
+        color: #003366;
     }
     .active {
-        background-color: #cce0ff;
-        color: #002b80;
-        font-weight: 600;
+        background-color: #004080;
+        color: white !important;
     }
     .separator {
         color: #999;
-        font-weight: 400;
+        font-weight: bold;
         font-size: 18px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- Session State ---
+# --- Initialize Session State for Navigation ---
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
-# --- Navbar Layout ---
-st.markdown(f"""
-    <div class="navbar">
-        <div class="nav-left">📘 Document Sentiment Analyzer</div>
-        <div class="nav-right">
+# --- Navigation Bar ---
+def navbar():
+    st.markdown(f"""
+        <div class="navbar">
+            <div class="nav-title">📘 Document Sentiment Analyzer</div>
             <a class="nav-item {'active' if st.session_state.page=='home' else ''}" href="#" onclick="window.parent.postMessage('home', '*')">🏠 Home</a>
             <span class="separator">|</span>
             <a class="nav-item {'active' if st.session_state.page=='analyze' else ''}" href="#" onclick="window.parent.postMessage('analyze', '*')">🧠 Analyze</a>
@@ -73,34 +74,11 @@ st.markdown(f"""
             <span class="separator">|</span>
             <a class="nav-item {'active' if st.session_state.page=='contact' else ''}" href="#" onclick="window.parent.postMessage('contact', '*')">✉️ Contact</a>
         </div>
-    </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# --- Core Functions ---
-def read_docx(file):
-    doc = Document(file)
-    return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+navbar()
 
-def read_pdf(file):
-    text = ""
-    with pdfplumber.open(file) as pdf:
-        for page in pdf.pages:
-            content = page.extract_text()
-            if content:
-                text += content + "\n"
-    return text
-
-def get_sentiment(text):
-    score = TextBlob(text).sentiment.polarity
-    if score > 0.2:
-        category = "Positive 😊"
-    elif score < -0.2:
-        category = "Negative 😔"
-    else:
-        category = "Neutral 😐"
-    return score, category
-
-# --- Page Switching Logic ---
+# --- Buttons for Navigation (Preserves Streamlit State) ---
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     if st.button("🏠 Home"):
@@ -117,51 +95,94 @@ with col4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- HOME PAGE ---
+# --- Function Definitions (Your Original Code Unchanged) ---
+def read_docx(file):
+    doc = Document(file)
+    text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+    return text
+
+def read_pdf(file):
+    text = ""
+    with pdfplumber.open(file) as pdf:
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+    return text
+
+def get_sentiment(text):
+    sentiment_score = TextBlob(text).sentiment.polarity
+    if sentiment_score > 0.2:
+        sentiment_category = "Positive 😊"
+    elif sentiment_score < -0.2:
+        sentiment_category = "Negative 😔"
+    else:
+        sentiment_category = "Neutral 😐"
+    return sentiment_score, sentiment_category
+
+# --- PAGE 1: HOME ---
 if st.session_state.page == "home":
     st.title("Welcome to the Document Sentiment Analyzer 👋")
+    st.subheader("Understand the tone of your documents instantly!")
     st.write("""
-    This tool analyzes the **sentiment** of your uploaded documents — academic papers, reports, or reviews —  
-    and classifies them as **Positive**, **Negative**, or **Neutral** using NLP techniques.
+    This web application uses **Natural Language Processing (NLP)** to analyze  
+    the emotional tone of any **PDF** or **Word (.docx)** document.  
+    It identifies whether the overall sentiment is **Positive**, **Negative**, or **Neutral**.
     """)
-    st.image("https://cdn-icons-png.flaticon.com/512/4781/4781517.png", width=200)
-    st.info("Use the navigation bar above to start analyzing your document or learn more about this project.")
+    st.image("https://cdn-icons-png.flaticon.com/512/4781/4781517.png", width=250)
+    st.markdown("---")
+    st.info("Use the navigation bar above to start analyzing your document or learn more about the app.")
 
-# --- ANALYZE PAGE ---
+# --- PAGE 2: ANALYZE DOCUMENT ---
 elif st.session_state.page == "analyze":
-    st.title("🧠 Document Sentiment Analysis")
-    st.write("Upload a **PDF** or **Word (.docx)** document to analyze its overall sentiment.")
-    uploaded_file = st.file_uploader("📁 Choose a file", type=["pdf", "docx"])
+    st.title("🧠 Analyze Your Document")
+    uploaded_file = st.file_uploader("📁 Upload a PDF or Word file", type=["pdf", "docx"])
     if uploaded_file:
-        text_data = read_docx(uploaded_file) if uploaded_file.name.endswith(".docx") else read_pdf(uploaded_file)
+        if uploaded_file.name.endswith(".docx"):
+            text_data = read_docx(uploaded_file)
+        elif uploaded_file.name.endswith(".pdf"):
+            text_data = read_pdf(uploaded_file)
+        else:
+            st.error("Unsupported file format.")
+            st.stop()
+
         with st.spinner("Analyzing sentiment..."):
             sentiment_score, sentiment_category = get_sentiment(text_data)
+
         st.subheader("📊 Sentiment Analysis Results")
         st.write(f"**Sentiment Score:** {sentiment_score:.4f}")
         st.write(f"**Overall Sentiment:** {sentiment_category}")
+
         st.subheader("📝 Document Preview")
         st.text_area("Extracted Text (First 1000 characters):", text_data[:1000])
 
-# --- ABOUT US PAGE ---
+# --- PAGE 3: ABOUT ---
 elif st.session_state.page == "about":
-    st.title("ℹ️ About This Project")
+    st.title("ℹ️ About This App")
     st.write("""
-    Developed by **Hemanth Ram S**,  
-    BBA (Hons) Business Analytics student at **PES University, Bengaluru**.
+    The **Document Sentiment Analyzer** was developed by **Hemanth Ram S**,  
+    a Business Analytics student at **PES University, Bengaluru**.
 
-    **Tech Stack**
-    - 🧠 TextBlob – Sentiment Analysis  
-    - 📄 pdfplumber / python-docx – Text Extraction  
-    - 🌐 Streamlit – Web App Framework
+    **Objective:**  
+    To apply *Natural Language Processing (NLP)* and *Machine Learning* techniques  
+    in real-world scenarios for sentiment classification.
+
+    **Tech Stack Used:**
+    - 🐍 Python  
+    - 🧠 TextBlob (Sentiment Analysis)  
+    - 📄 pdfplumber & python-docx (Text Extraction)  
+    - 🎨 Streamlit (Web Deployment)
     """)
 
-# --- CONTACT PAGE ---
+# --- PAGE 4: CONTACT ---
 elif st.session_state.page == "contact":
-    st.title("✉️ Contact")
+    st.title("✉️ Connect With Me")
     st.write("""
-    For collaborations or academic discussions:
-    - 📧 **Email:** [hemanthramhrs@gmail.com](mailto:hemanthramhrs@gmail.com)
-    - 💼 **LinkedIn:** [linkedin.com/in/hemanth-ram-9a6a53247](https://linkedin.com/in/hemanth-ram-9a6a53247)
+    For collaborations or academic discussions, feel free to reach out:
+    """)
+    st.markdown("""
+    - 📧 **Email:** [hemanthramhrs@gmail.com](mailto:hemanthramhrs@gmail.com)  
+    - 💼 **LinkedIn:** [linkedin.com/in/hemanth-ram-9a6a53247](https://www.linkedin.com/in/hemanth-ram-9a6a53247/)  
     - 🐙 **GitHub:** [github.com/Hemanthram0205](https://github.com/Hemanthram0205)
     """)
-    st.caption("Built with ❤️ using Streamlit | Designed by Hemanth Ram S")
+    st.caption("💡 Built with Streamlit | Version 2.0 | Designed by Hemanth Ram S")
