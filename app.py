@@ -5,13 +5,59 @@ from docx import Document
 import io
 
 # --- Page Config ---
-st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📊")
+st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📊", layout="wide")
 
-# --- Sidebar Navigation ---
-st.sidebar.title("📚 Navigation")
-page = st.sidebar.radio("Go to", ["🏠 Home", "🧠 Analyze Document", "ℹ️ About Us", "✉️ Connect With Me"])
+# --- Custom Top Navigation Bar ---
+st.markdown("""
+    <style>
+    /* Navigation bar styling */
+    .nav {
+        background-color: #2b2b2b;
+        overflow: hidden;
+        padding: 15px 10px;
+        border-radius: 8px;
+    }
+    .nav a {
+        float: left;
+        color: white;
+        text-align: center;
+        padding: 12px 18px;
+        text-decoration: none;
+        font-size: 17px;
+        font-weight: 500;
+    }
+    .nav a:hover {
+        background-color: #575757;
+        border-radius: 5px;
+    }
+    .nav-title {
+        float: left;
+        font-size: 20px;
+        color: #00BFFF;
+        font-weight: bold;
+        padding: 10px 20px;
+    }
+    .nav-right {
+        float: right;
+    }
+    </style>
 
-# --- Function Definitions (original code, unchanged) ---
+    <div class="nav">
+        <div class="nav-title">📘 Document Sentiment Analyzer</div>
+        <div class="nav-right">
+            <a href="?page=home">Home</a>
+            <a href="?page=analyze">Analyze</a>
+            <a href="?page=about">About Us</a>
+            <a href="?page=contact">Contact</a>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- Get current page from query parameters ---
+query_params = st.query_params
+page = query_params.get("page", ["home"])[0]
+
+# --- Function Definitions (Unchanged Original Code) ---
 def read_docx(file):
     doc = Document(file)
     text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
@@ -37,25 +83,22 @@ def get_sentiment(text):
     return sentiment_score, sentiment_category
 
 # --- PAGE 1: HOME ---
-if page == "🏠 Home":
-    st.title("📘 Document Sentiment Analyzer")
+if page == "home":
+    st.title("Welcome to the Document Sentiment Analyzer 👋")
     st.subheader("Understand the tone of your documents instantly!")
     st.write("""
-    Welcome to the **Document Sentiment Analyzer App** —  
-    a simple tool that uses **Natural Language Processing (NLP)**  
-    to detect the emotional tone of your documents.
-
-    You can upload a **PDF or Word (.docx)** file and get a quick  
-    classification of the overall sentiment:  
-    **Positive**, **Negative**, or **Neutral**.
+    Upload your **PDF or Word (.docx)** documents to analyze their sentiment using  
+    **Natural Language Processing (NLP)** powered by *TextBlob*.
+    
+    Get an instant breakdown of whether the content is **Positive**, **Negative**, or **Neutral**.
     """)
     st.image("https://cdn-icons-png.flaticon.com/512/4781/4781517.png", width=250)
     st.markdown("---")
-    st.markdown("👈 Use the sidebar to start analyzing your documents!")
+    st.info("Navigate using the top menu to analyze a document or learn more about the app.")
 
-# --- PAGE 2: ANALYZE DOCUMENT (Your Original Code) ---
-elif page == "🧠 Analyze Document":
-    st.title("Document Sentiment Analysis App")
+# --- PAGE 2: ANALYZE DOCUMENT (Your Original Code, Unchanged) ---
+elif page == "analyze":
+    st.title("🧠 Analyze Your Document")
     st.write("Upload a **PDF** or **Word (.docx)** document to analyze its overall sentiment.")
 
     uploaded_file = st.file_uploader("📁 Choose a PDF or Word file", type=["pdf", "docx"])
@@ -84,26 +127,26 @@ elif page == "🧠 Analyze Document":
         st.text_area("Extracted Text (First 1000 characters):", text_data[:1000])
 
 # --- PAGE 3: ABOUT US ---
-elif page == "ℹ️ About Us":
+elif page == "about":
     st.title("ℹ️ About This App")
     st.write("""
-    This app was created by **Hemanth Ram S**,  
+    This app was created by **Hemanth Ram. S**,  
     a Business Analytics student at **PES University, Bengaluru**.
 
-    It combines:
-    - 🧠 **TextBlob** for Sentiment Analysis  
+    It uses:
+    - 🧠 **TextBlob** for sentiment analysis  
     - 📄 **pdfplumber** & **python-docx** for text extraction  
-    - 🎨 **Streamlit** for an interactive user experience  
+    - 🎨 **Streamlit** for building a simple yet interactive user experience  
 
-    The goal of this project is to make sentiment analysis accessible  
-    for any text-based document — from reports to essays.
+    The purpose of this app is to help users instantly detect the tone of any text-based document.
     """)
 
-# --- PAGE 4: CONNECT / CONTACT ---
-elif page == "✉️ Connect With Me":
-    st.title("✉️ Let's Connect!")
+# --- PAGE 4: CONTACT ---
+elif page == "contact":
+    st.title("✉️ Connect With Me")
     st.write("""
-    Feel free to reach out for collaborations, discussions, or feedback!
+    I'd love to hear your feedback or discuss collaboration opportunities!  
+    Reach out through the following:
     """)
     st.markdown("""
     - 📧 **Email:** [hemanthramhrs@gmail.com](mailto:hemanthramhrs@gmail.com)  
@@ -111,4 +154,4 @@ elif page == "✉️ Connect With Me":
     - 🐙 **GitHub:** [github.com/Hemanthram0205](https://github.com/Hemanthram0205)
     """)
     st.markdown("---")
-    st.caption("💡 Built with Streamlit | Version 2.0")
+    st.caption("💡 Built with Streamlit | Version 2.0 | Designed by Hemanth Ram S")
