@@ -4,9 +4,9 @@ import pdfplumber   # instead of fitz / PyMuPDF
 from docx import Document
 import io
 
-st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="🧠")
+st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📊")
 
-st.title("🧠 Document Sentiment Analysis App")
+st.title("Document Sentiment Analysis App")
 st.write("Upload a **PDF** or **Word (.docx)** document to analyze its overall sentiment.")
 
 # Function to read .docx files
