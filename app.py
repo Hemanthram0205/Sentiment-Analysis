@@ -9,33 +9,44 @@ st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📊", l
 # --- Navbar Styling ---
 st.markdown("""
     <style>
-    /* Remove extra Streamlit padding/margin at top */
+    /* Completely remove Streamlit's top padding and header */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
     .block-container {
         padding-top: 0rem !important;
+        margin-top: -3rem !important;
     }
-    header {visibility: hidden;}
+
+    /* Body styling */
     body {
         background-color: #f8f9fa;
     }
+
+    /* Navbar design */
     .navbar {
         background-color: #ffffff;
-        border: 1px solid #dcdcdc;
-        padding: 14px 25px;
-        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        padding: 12px 25px;
+        border-radius: 8px;
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 30px;
-        margin-bottom: 35px;
+        gap: 40px;
+        margin-bottom: 40px;
         box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
     }
+
+    /* App title */
     .nav-title {
-        color: #004080;
+        color: #003366;
         font-size: 20px;
         font-weight: 700;
         margin-right: 30px;
         font-family: 'Segoe UI', sans-serif;
     }
+
+    /* Navigation buttons */
     .nav-button {
         background-color: white;
         color: #004080;
@@ -52,6 +63,7 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 # --- Session state ---
