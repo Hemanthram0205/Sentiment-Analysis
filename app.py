@@ -2,12 +2,11 @@ import streamlit as st
 from textblob import TextBlob
 import pdfplumber
 from docx import Document
-import io
 
 # --- Page Config ---
 st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📊", layout="wide")
 
-# --- Elegant Professional Navbar Styling ---
+# --- Navbar Styling ---
 st.markdown("""
     <style>
     body {
@@ -57,28 +56,34 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Initialize Session State for Navigation ---
+# --- Initialize Session State ---
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
-# --- Navigation Bar ---
+# --- Navbar Function ---
 def navbar():
     st.markdown(f"""
         <div class="navbar">
             <div class="nav-title">📘 Document Sentiment Analyzer</div>
-            <a class="nav-item {'active' if st.session_state.page=='home' else ''}" href="#" onclick="window.parent.postMessage('home', '*')">🏠 Home</a>
+            <a class="nav-item {'active' if st.session_state.page=='home' else ''}" href="?page=home">🏠 Home</a>
             <span class="separator">|</span>
-            <a class="nav-item {'active' if st.session_state.page=='analyze' else ''}" href="#" onclick="window.parent.postMessage('analyze', '*')">🧠 Analyze</a>
+            <a class="nav-item {'active' if st.session_state.page=='analyze' else ''}" href="?page=analyze">🧠 Analyze</a>
             <span class="separator">|</span>
-            <a class="nav-item {'active' if st.session_state.page=='about' else ''}" href="#" onclick="window.parent.postMessage('about', '*')">ℹ️ About Us</a>
+            <a class="nav-item {'active' if st.session_state.page=='about' else ''}" href="?page=about">ℹ️ About Us</a>
             <span class="separator">|</span>
-            <a class="nav-item {'active' if st.session_state.page=='contact' else ''}" href="#" onclick="window.parent.postMessage('contact', '*')">✉️ Contact</a>
+            <a class="nav-item {'active' if st.session_state.page=='contact' else ''}" href="?page=contact">✉️ Contact</a>
         </div>
     """, unsafe_allow_html=True)
 
+# --- Detect Navigation ---
+query_params = st.query_params
+if "page" in query_params:
+    st.session_state.page = query_params["page"]
+
+# --- Render Navbar ---
 navbar()
 
-# --- Function Definitions (Original Logic Unchanged) ---
+# --- Core Functions (original logic) ---
 def read_docx(file):
     doc = Document(file)
     text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
@@ -103,27 +108,11 @@ def get_sentiment(text):
         sentiment_category = "Neutral 😐"
     return sentiment_score, sentiment_category
 
-# --- Navigation Logic (Handled in Python, not via JS) ---
-selected_page = st.session_state.page
-page_choice = st.radio(
-    "",
-    options=["Home", "Analyze", "About Us", "Contact"],
-    horizontal=True,
-    label_visibility="collapsed",
-    index=["home", "analyze", "about", "contact"].index(st.session_state.page)
-)
+# --- Page Routing ---
+page = st.session_state.page
 
-if page_choice == "Home":
-    st.session_state.page = "home"
-elif page_choice == "Analyze":
-    st.session_state.page = "analyze"
-elif page_choice == "About Us":
-    st.session_state.page = "about"
-else:
-    st.session_state.page = "contact"
-
-# --- PAGE 1: HOME ---
-if st.session_state.page == "home":
+# --- HOME PAGE ---
+if page == "home":
     st.title("Welcome to the Document Sentiment Analyzer 👋")
     st.subheader("Understand the tone of your documents instantly!")
     st.write("""
@@ -135,8 +124,8 @@ if st.session_state.page == "home":
     st.markdown("---")
     st.info("Use the navigation bar above to start analyzing your document or learn more about the app.")
 
-# --- PAGE 2: ANALYZE DOCUMENT ---
-elif st.session_state.page == "analyze":
+# --- ANALYZE PAGE ---
+elif page == "analyze":
     st.title("🧠 Analyze Your Document")
     uploaded_file = st.file_uploader("📁 Upload a PDF or Word file", type=["pdf", "docx"])
     if uploaded_file:
@@ -158,8 +147,8 @@ elif st.session_state.page == "analyze":
         st.subheader("📝 Document Preview")
         st.text_area("Extracted Text (First 1000 characters):", text_data[:1000])
 
-# --- PAGE 3: ABOUT ---
-elif st.session_state.page == "about":
+# --- ABOUT PAGE ---
+elif page == "about":
     st.title("ℹ️ About This App")
     st.write("""
     The **Document Sentiment Analyzer** was developed by **Hemanth Ram S**,  
@@ -176,8 +165,8 @@ elif st.session_state.page == "about":
     - 🎨 Streamlit (Web Deployment)
     """)
 
-# --- PAGE 4: CONTACT ---
-elif st.session_state.page == "contact":
+# --- CONTACT PAGE ---
+elif page == "contact":
     st.title("✉️ Connect With Me")
     st.write("""
     For collaborations or academic discussions, feel free to reach out:
@@ -187,4 +176,4 @@ elif st.session_state.page == "contact":
     - 💼 **LinkedIn:** [linkedin.com/in/hemanth-ram-9a6a53247](https://www.linkedin.com/in/hemanth-ram-9a6a53247/)  
     - 🐙 **GitHub:** [github.com/Hemanthram0205](https://github.com/Hemanthram0205)
     """)
-    st.caption("💡 Built with Streamlit | Version 2.0 | Designed by Hemanth Ram S")
+    st.caption("© 2025 Hemanth Ram S | PES University | Built with Streamlit")
