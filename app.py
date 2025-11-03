@@ -78,24 +78,7 @@ def navbar():
 
 navbar()
 
-# --- Buttons for Navigation (Preserves Streamlit State) ---
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    if st.button("🏠 Home"):
-        st.session_state.page = "home"
-with col2:
-    if st.button("🧠 Analyze"):
-        st.session_state.page = "analyze"
-with col3:
-    if st.button("ℹ️ About Us"):
-        st.session_state.page = "about"
-with col4:
-    if st.button("✉️ Contact"):
-        st.session_state.page = "contact"
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# --- Function Definitions (Your Original Code Unchanged) ---
+# --- Function Definitions (Original Logic Unchanged) ---
 def read_docx(file):
     doc = Document(file)
     text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
@@ -119,6 +102,25 @@ def get_sentiment(text):
     else:
         sentiment_category = "Neutral 😐"
     return sentiment_score, sentiment_category
+
+# --- Navigation Logic (Handled in Python, not via JS) ---
+selected_page = st.session_state.page
+page_choice = st.radio(
+    "",
+    options=["Home", "Analyze", "About Us", "Contact"],
+    horizontal=True,
+    label_visibility="collapsed",
+    index=["home", "analyze", "about", "contact"].index(st.session_state.page)
+)
+
+if page_choice == "Home":
+    st.session_state.page = "home"
+elif page_choice == "Analyze":
+    st.session_state.page = "analyze"
+elif page_choice == "About Us":
+    st.session_state.page = "about"
+else:
+    st.session_state.page = "contact"
 
 # --- PAGE 1: HOME ---
 if st.session_state.page == "home":
