@@ -9,6 +9,11 @@ st.set_page_config(page_title="Document Sentiment Analyzer", page_icon="📊", l
 # --- Navbar Styling ---
 st.markdown("""
     <style>
+    /* Remove extra Streamlit padding/margin at top */
+    .block-container {
+        padding-top: 0rem !important;
+    }
+    header {visibility: hidden;}
     body {
         background-color: #f8f9fa;
     }
@@ -45,13 +50,9 @@ st.markdown("""
         background-color: #004080;
         color: white;
     }
-    .separator {
-        color: #999;
-        font-weight: bold;
-        font-size: 18px;
-    }
     </style>
 """, unsafe_allow_html=True)
+
 
 # --- Session state ---
 if "page" not in st.session_state:
