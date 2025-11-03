@@ -31,22 +31,19 @@ st.markdown("""
         margin-right: 30px;
         font-family: 'Segoe UI', sans-serif;
     }
-    .nav-item {
+    .nav-button {
+        background-color: white;
         color: #004080;
-        text-decoration: none;
+        border: 1px solid #004080;
+        padding: 6px 18px;
+        border-radius: 6px;
+        cursor: pointer;
         font-weight: 500;
-        padding: 6px 16px;
-        border-radius: 5px;
         transition: all 0.3s ease;
-        font-family: 'Segoe UI', sans-serif;
     }
-    .nav-item:hover {
-        background-color: #e6f0ff;
-        color: #003366;
-    }
-    .active {
+    .nav-button:hover {
         background-color: #004080;
-        color: white !important;
+        color: white;
     }
     .separator {
         color: #999;
@@ -56,34 +53,36 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Initialize Session State ---
+# --- Session state ---
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
-# --- Navbar Function ---
+# --- Navbar function ---
 def navbar():
-    st.markdown(f"""
-        <div class="navbar">
-            <div class="nav-title">📘 Document Sentiment Analyzer</div>
-            <a class="nav-item {'active' if st.session_state.page=='home' else ''}" href="?page=home">🏠 Home</a>
-            <span class="separator">|</span>
-            <a class="nav-item {'active' if st.session_state.page=='analyze' else ''}" href="?page=analyze">🧠 Analyze</a>
-            <span class="separator">|</span>
-            <a class="nav-item {'active' if st.session_state.page=='about' else ''}" href="?page=about">ℹ️ About Us</a>
-            <span class="separator">|</span>
-            <a class="nav-item {'active' if st.session_state.page=='contact' else ''}" href="?page=contact">✉️ Contact</a>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("<div class='navbar'>", unsafe_allow_html=True)
+    col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1, 1])
 
-# --- Detect Navigation ---
-query_params = st.query_params
-if "page" in query_params:
-    st.session_state.page = query_params["page"]
+    with col1:
+        st.markdown("<div class='nav-title'>📘 Document Sentiment Analyzer</div>", unsafe_allow_html=True)
+    with col2:
+        if st.button("🏠 Home"):
+            st.session_state.page = "home"
+    with col3:
+        if st.button("🧠 Analyze"):
+            st.session_state.page = "analyze"
+    with col4:
+        if st.button("ℹ️ About Us"):
+            st.session_state.page = "about"
+    with col5:
+        if st.button("✉️ Contact"):
+            st.session_state.page = "contact"
 
-# --- Render Navbar ---
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# --- Display Navbar ---
 navbar()
 
-# --- Core Functions (original logic) ---
+# --- Original functions ---
 def read_docx(file):
     doc = Document(file)
     text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
@@ -108,10 +107,9 @@ def get_sentiment(text):
         sentiment_category = "Neutral 😐"
     return sentiment_score, sentiment_category
 
-# --- Page Routing ---
+# --- PAGE CONTENTS ---
 page = st.session_state.page
 
-# --- HOME PAGE ---
 if page == "home":
     st.title("Welcome to the Document Sentiment Analyzer 👋")
     st.subheader("Understand the tone of your documents instantly!")
@@ -124,7 +122,6 @@ if page == "home":
     st.markdown("---")
     st.info("Use the navigation bar above to start analyzing your document or learn more about the app.")
 
-# --- ANALYZE PAGE ---
 elif page == "analyze":
     st.title("🧠 Analyze Your Document")
     uploaded_file = st.file_uploader("📁 Upload a PDF or Word file", type=["pdf", "docx"])
@@ -147,7 +144,6 @@ elif page == "analyze":
         st.subheader("📝 Document Preview")
         st.text_area("Extracted Text (First 1000 characters):", text_data[:1000])
 
-# --- ABOUT PAGE ---
 elif page == "about":
     st.title("ℹ️ About This App")
     st.write("""
@@ -165,7 +161,6 @@ elif page == "about":
     - 🎨 Streamlit (Web Deployment)
     """)
 
-# --- CONTACT PAGE ---
 elif page == "contact":
     st.title("✉️ Connect With Me")
     st.write("""
