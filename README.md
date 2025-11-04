@@ -28,4 +28,21 @@ It extracts text automatically, analyzes the tone using Natural Language Process
    - `pdfplumber` → for PDF documents  
    - `python-docx` → for Word files  
 3. `TextBlob` performs sentiment analysis to compute:  
-   - **Sentiment S**
+   - **Sentiment Score:** from `-1` (negative) to `+1` (positive)  
+   - **Overall Category:** *Positive*, *Neutral*, or *Negative*  
+4. Results are displayed instantly on the dashboard.  
+
+---
+
+## 🧰 Tech Stack  
+
+| Component | Technology Used |
+|------------|-----------------|
+| **Language** | Python |
+| **Framework** | Streamlit |
+| **NLP Library** | TextBlob |
+| **File Processing** | pdfplumber, python-docx |
+| **Deployment** | Streamlit Cloud |
+
+---
+
