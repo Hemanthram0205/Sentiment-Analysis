@@ -1,6 +1,6 @@
 # 🧠 Document Sentiment Analysis App  
 
-🔗 **Live Demo:** [Try it here → Sentiment Analysis Streamlit App](https://your-streamlit-link-here.streamlit.app/)  
+🔗 **Live Demo:** [Try it here → Sentiment Analysis Streamlit App](https://sentimentanalysis18.streamlit.app/)  
 
 ---
 
