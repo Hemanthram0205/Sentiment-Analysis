@@ -2,7 +2,6 @@ import streamlit as st
 from textblob import TextBlob
 import pdfplumber
 from docx import Document
-import re
 
 # =========================
 # PAGE CONFIG
@@ -61,7 +60,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================
-# SESSION MANAGEMENT
+# SESSION STATE
 # =========================
 if "page" not in st.session_state:
     st.session_state.page = "home"
@@ -122,7 +121,7 @@ def get_sentiment(text):
     return sentiment, category
 
 def highlight_text(text):
-    """Highlight positive/negative words in text preview"""
+    """Highlight positive/negative/neutral words"""
     words = text.split()
     highlighted = []
     for word in words:
@@ -140,6 +139,9 @@ def highlight_text(text):
 # =========================
 page = st.session_state.page
 
+# -------------------------
+# HOME PAGE
+# -------------------------
 if page == "home":
     st.title("Welcome to the Document Sentiment Analyzer 👋")
     st.subheader("Analyze your documents for emotional tone instantly.")
@@ -151,18 +153,23 @@ if page == "home":
     st.markdown("---")
     st.info("Use the navigation bar above to begin your analysis or learn more.")
 
+# -------------------------
+# ANALYZE PAGE
+# -------------------------
 elif page == "analyze":
     st.title("🧠 Document Sentiment Analysis")
     uploaded_file = st.file_uploader("📁 Upload a PDF or Word file", type=["pdf", "docx"])
 
     if uploaded_file:
+        # Read uploaded file
         if uploaded_file.name.endswith(".docx"):
             text = read_docx(uploaded_file)
         else:
             text = read_pdf(uploaded_file)
 
+        # Check if text extracted
         if not text.strip():
-            st.error("No readable text found in this file. Please upload a text-based PDF or Word document.")
+            st.error("No readable text found. Please upload a text-based PDF or Word document.")
         else:
             with st.spinner("Analyzing sentiment..."):
                 score, category = get_sentiment(text)
@@ -170,17 +177,27 @@ elif page == "analyze":
             st.success("✅ Analysis Complete!")
 
             st.subheader("📊 Sentiment Results")
-            st.metric("Sentiment Score", f"{score:.4f}", delta=None)
+            st.metric("Sentiment Score", f"{score:.4f}")
             st.write(f"**Overall Sentiment:** {category}")
 
-            # Sentiment visualization
+            # Progress bar for visualization
             st.progress((score + 1) / 2)
             st.caption("← Negative | Neutral | Positive →")
 
-            st.subheader("📝 Document Preview (Highlighted)")
-            highlighted_text = highlight_text(text[:1000])
-            st.markdown(highlighted_text, unsafe_allow_html=True)
+            # Full text preview with highlighting
+            st.subheader("📝 Full Document Preview (Highlighted)")
+            st.caption("Scroll through the entire extracted document below.")
+            highlighted_text = highlight_text(text)
+            st.markdown(
+                f"<div style='background-color:white; padding:15px; border-radius:10px; "
+                f"border:1px solid #ddd; max-height:600px; overflow-y:auto;'>"
+                f"{highlighted_text}</div>",
+                unsafe_allow_html=True
+            )
 
+# -------------------------
+# ABOUT PAGE
+# -------------------------
 elif page == "about":
     st.title("ℹ️ About This App")
     st.write("""
@@ -198,6 +215,9 @@ elif page == "about":
     - 🎨 Streamlit for UI and deployment
     """)
 
+# -------------------------
+# CONTACT PAGE
+# -------------------------
 elif page == "contact":
     st.title("✉️ Contact & Connect")
     st.write("Reach out for collaborations, research, or academic discussions:")
