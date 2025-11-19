@@ -165,6 +165,9 @@ def render_navbar():
                 st.session_state.page = "contact"
 render_navbar()
 
+# Add spacing after navbar
+st.markdown("<br>", unsafe_allow_html=True)
+
 # =========================
 # HELPERS
 # =========================
