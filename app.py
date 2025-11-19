@@ -165,7 +165,7 @@ def render_navbar():
                 st.session_state.page = "contact"
 render_navbar()
 
-# Remove the white space bar
+# Remove ALL white boxes and spacing
 st.markdown("""
 <style>
 .element-container:has(.stButton) {
@@ -173,6 +173,22 @@ st.markdown("""
 }
 div[data-testid="column"] {
     padding-bottom: 0 !important;
+}
+.element-container {
+    margin-bottom: 0 !important;
+}
+div[data-testid="stVerticalBlock"] > div {
+    gap: 0 !important;
+}
+.stMarkdown {
+    margin-bottom: 0 !important;
+}
+/* Hide empty containers */
+.element-container:empty {
+    display: none !important;
+}
+div.row-widget.stButton {
+    margin-bottom: 0 !important;
 }
 </style>
 """, unsafe_allow_html=True)
