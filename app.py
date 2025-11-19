@@ -17,7 +17,7 @@ st.markdown("""
 footer {visibility: hidden;}
 header {visibility: hidden;}
 .block-container {
-    padding-top: 1.5rem;
+    padding-top: 0.5rem;
     padding-left: 3rem;
     padding-right: 3rem;
     max-width: 1400px;
@@ -38,7 +38,7 @@ body {
     display:flex;
     align-items:center;
     gap:10px;
-    font-size:18px;
+    font-size:24px;
     font-weight:700;
     color:#08306b;
 }
