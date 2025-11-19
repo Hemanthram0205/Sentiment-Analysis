@@ -32,7 +32,7 @@ body {
     align-items:center;
     justify-content:space-between;
     padding: 10px 0;
-    margin-bottom: 18px;
+    margin-bottom: 0px;
 }
 .brand {
     display:flex;
@@ -165,8 +165,17 @@ def render_navbar():
                 st.session_state.page = "contact"
 render_navbar()
 
-# Add spacing after navbar
-st.markdown("<br>", unsafe_allow_html=True)
+# Remove the white space bar
+st.markdown("""
+<style>
+.element-container:has(.stButton) {
+    margin-bottom: 0 !important;
+}
+div[data-testid="column"] {
+    padding-bottom: 0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =========================
 # HELPERS
