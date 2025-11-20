@@ -2,12 +2,7 @@ import streamlit as st
 from textblob import TextBlob
 import pdfplumber
 from docx import Document
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+from fpdf import FPDF
 import io
 from datetime import datetime
 
@@ -247,104 +242,56 @@ def highlight_text(text):
     return " ".join(highlighted)
 
 def generate_pdf_report(filename, text, sentiment_score, sentiment_category, word_count):
-    """Generate a PDF report for sentiment analysis"""
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=0.75*inch)
-    story = []
+    """Generate a PDF report for sentiment analysis using FPDF"""
     
-    # Styles
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#0b3b73'),
-        alignment=TA_CENTER,
-        spaceAfter=30
-    )
+    class PDF(FPDF):
+        def header(self):
+            self.set_font('Arial', 'B', 16)
+            self.set_text_color(11, 59, 115)  # #0b3b73
+            self.cell(0, 10, 'Document Sentiment Analysis Report', 0, 1, 'C')
+            self.ln(10)
+        
+        def footer(self):
+            self.set_y(-15)
+            self.set_font('Arial', 'I', 8)
+            self.set_text_color(128, 128, 128)
+            self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
     
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=16,
-        textColor=colors.HexColor('#0b3b73'),
-        spaceAfter=12,
-        fontName='Helvetica-Bold'
-    )
+    # Create PDF
+    pdf = PDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
     
-    normal_style = ParagraphStyle(
-        'CustomNormal',
-        parent=styles['BodyText'],
-        fontSize=11,
-        alignment=TA_JUSTIFY,
-        spaceAfter=12
-    )
+    # Document Information Section
+    pdf.set_font('Arial', 'B', 14)
+    pdf.set_text_color(11, 59, 115)
+    pdf.cell(0, 10, 'Document Information', 0, 1)
+    pdf.set_font('Arial', '', 11)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 7, f'File Name: {filename}', 0, 1)
+    pdf.cell(0, 7, f'Analysis Date: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}', 0, 1)
+    pdf.cell(0, 7, f'Word Count: {word_count}', 0, 1)
+    pdf.ln(10)
     
-    # Title
-    story.append(Paragraph("📘 Document Sentiment Analysis Report", title_style))
-    story.append(Spacer(1, 20))
+    # Sentiment Analysis Results Section
+    pdf.set_font('Arial', 'B', 14)
+    pdf.set_text_color(11, 59, 115)
+    pdf.cell(0, 10, 'Sentiment Analysis Results', 0, 1)
     
-    # Document Information
-    story.append(Paragraph("Document Information", heading_style))
+    pdf.set_font('Arial', '', 11)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 7, f'Sentiment Score: {sentiment_score:.4f}', 0, 1)
     
-    # Create a table for document info
-    doc_info_data = [
-        ['File Name:', filename],
-        ['Analysis Date:', datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
-        ['Word Count:', str(word_count)]
-    ]
+    # Clean sentiment category (remove emoji)
+    clean_category = sentiment_category.replace('😊', '').replace('😔', '').replace('😐', '').strip()
+    pdf.cell(0, 7, f'Overall Sentiment: {clean_category}', 0, 1)
+    pdf.cell(0, 7, 'Polarity Range: -1.0 (Most Negative) to +1.0 (Most Positive)', 0, 1)
+    pdf.ln(10)
     
-    doc_info_table = Table(doc_info_data, colWidths=[2*inch, 4*inch])
-    doc_info_table.setStyle(TableStyle([
-        ('FONT', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONT', (1, 0), (1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 11),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#6b7280')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-    ]))
-    
-    story.append(doc_info_table)
-    story.append(Spacer(1, 20))
-    
-    # Sentiment Analysis Results
-    story.append(Paragraph("Sentiment Analysis Results", heading_style))
-    
-    # Determine color based on sentiment
-    if sentiment_score > 0.2:
-        score_color = colors.green
-        sentiment_text = "Positive"
-    elif sentiment_score < -0.2:
-        score_color = colors.red
-        sentiment_text = "Negative"
-    else:
-        score_color = colors.orange
-        sentiment_text = "Neutral"
-    
-    # Results table
-    results_data = [
-        ['Sentiment Score:', f'{sentiment_score:.4f}'],
-        ['Overall Sentiment:', sentiment_category.replace('😊', '').replace('😔', '').replace('😐', '').strip()],
-        ['Polarity Range:', '-1.0 (Most Negative) to +1.0 (Most Positive)']
-    ]
-    
-    results_table = Table(results_data, colWidths=[2*inch, 4*inch])
-    results_table.setStyle(TableStyle([
-        ('FONT', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONT', (1, 0), (1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 11),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#6b7280')),
-        ('TEXTCOLOR', (1, 0), (1, 0), score_color),
-        ('TEXTCOLOR', (1, 1), (1, 1), score_color),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-    ]))
-    
-    story.append(results_table)
-    story.append(Spacer(1, 20))
-    
-    # Document Preview (First 200 words)
-    story.append(Paragraph("Document Preview (First 200 Words)", heading_style))
+    # Document Preview Section
+    pdf.set_font('Arial', 'B', 14)
+    pdf.set_text_color(11, 59, 115)
+    pdf.cell(0, 10, 'Document Preview (First 200 Words)', 0, 1)
     
     # Get first 200 words
     words = text.split()[:200]
@@ -352,25 +299,51 @@ def generate_pdf_report(filename, text, sentiment_score, sentiment_category, wor
     if len(text.split()) > 200:
         preview_text += "..."
     
-    # Clean the text for PDF (remove special characters that might cause issues)
-    preview_text = preview_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    # Add preview text
+    pdf.set_font('Arial', '', 10)
+    pdf.set_text_color(0, 0, 0)
     
-    story.append(Paragraph(preview_text, normal_style))
-    story.append(Spacer(1, 20))
+    # Handle encoding issues and wrap text
+    try:
+        # Clean text for Latin-1 encoding
+        preview_text = preview_text.encode('latin-1', 'replace').decode('latin-1')
+        pdf.multi_cell(0, 5, preview_text)
+    except:
+        pdf.multi_cell(0, 5, "Preview text contains special characters that cannot be displayed.")
     
-    # Interpretation Guide
-    story.append(Paragraph("Interpretation Guide", heading_style))
-    interpretation_text = """
-    • <b>Positive Sentiment (Score > 0.2):</b> The document contains predominantly positive language, expressing favorable opinions, satisfaction, or optimism.<br/>
-    • <b>Negative Sentiment (Score < -0.2):</b> The document contains predominantly negative language, expressing dissatisfaction, criticism, or pessimism.<br/>
-    • <b>Neutral Sentiment (-0.2 ≤ Score ≤ 0.2):</b> The document maintains a balanced or objective tone without strong emotional language.
-    """
-    story.append(Paragraph(interpretation_text, normal_style))
+    pdf.ln(10)
     
-    # Build PDF
-    doc.build(story)
-    buffer.seek(0)
-    return buffer
+    # Interpretation Guide Section
+    pdf.set_font('Arial', 'B', 14)
+    pdf.set_text_color(11, 59, 115)
+    pdf.cell(0, 10, 'Interpretation Guide', 0, 1)
+    
+    pdf.set_font('Arial', '', 10)
+    pdf.set_text_color(0, 0, 0)
+    
+    interpretations = [
+        ('Positive Sentiment (Score > 0.2):', 
+         'The document contains predominantly positive language, expressing favorable opinions, satisfaction, or optimism.'),
+        ('Negative Sentiment (Score < -0.2):', 
+         'The document contains predominantly negative language, expressing dissatisfaction, criticism, or pessimism.'),
+        ('Neutral Sentiment (-0.2 to 0.2):', 
+         'The document maintains a balanced or objective tone without strong emotional language.')
+    ]
+    
+    for title, description in interpretations:
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(0, 7, title, 0, 1)
+        pdf.set_font('Arial', '', 10)
+        pdf.multi_cell(0, 5, description)
+        pdf.ln(3)
+    
+    # Save to buffer
+    pdf_buffer = io.BytesIO()
+    pdf_output = pdf.output(dest='S').encode('latin-1', 'replace')
+    pdf_buffer.write(pdf_output)
+    pdf_buffer.seek(0)
+    
+    return pdf_buffer
 
 # =========================
 # PAGES
@@ -473,7 +446,7 @@ elif st.session_state.page == "about":
     • TextBlob (Sentiment Analysis)<br>
     • pdfplumber & python-docx (Text Extraction)<br>
     • Streamlit (Web Deployment)<br>
-    • ReportLab (PDF Report Generation)
+    • FPDF (PDF Report Generation)
     </div>
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
