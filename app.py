@@ -2,6 +2,14 @@ import streamlit as st
 from textblob import TextBlob
 import pdfplumber
 from docx import Document
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+import io
+from datetime import datetime
 
 # =========================
 # PAGE CONFIG
@@ -238,6 +246,132 @@ def highlight_text(text):
             highlighted.append(word)
     return " ".join(highlighted)
 
+def generate_pdf_report(filename, text, sentiment_score, sentiment_category, word_count):
+    """Generate a PDF report for sentiment analysis"""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=0.75*inch)
+    story = []
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#0b3b73'),
+        alignment=TA_CENTER,
+        spaceAfter=30
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=16,
+        textColor=colors.HexColor('#0b3b73'),
+        spaceAfter=12,
+        fontName='Helvetica-Bold'
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['BodyText'],
+        fontSize=11,
+        alignment=TA_JUSTIFY,
+        spaceAfter=12
+    )
+    
+    # Title
+    story.append(Paragraph("📘 Document Sentiment Analysis Report", title_style))
+    story.append(Spacer(1, 20))
+    
+    # Document Information
+    story.append(Paragraph("Document Information", heading_style))
+    
+    # Create a table for document info
+    doc_info_data = [
+        ['File Name:', filename],
+        ['Analysis Date:', datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
+        ['Word Count:', str(word_count)]
+    ]
+    
+    doc_info_table = Table(doc_info_data, colWidths=[2*inch, 4*inch])
+    doc_info_table.setStyle(TableStyle([
+        ('FONT', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONT', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#6b7280')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    
+    story.append(doc_info_table)
+    story.append(Spacer(1, 20))
+    
+    # Sentiment Analysis Results
+    story.append(Paragraph("Sentiment Analysis Results", heading_style))
+    
+    # Determine color based on sentiment
+    if sentiment_score > 0.2:
+        score_color = colors.green
+        sentiment_text = "Positive"
+    elif sentiment_score < -0.2:
+        score_color = colors.red
+        sentiment_text = "Negative"
+    else:
+        score_color = colors.orange
+        sentiment_text = "Neutral"
+    
+    # Results table
+    results_data = [
+        ['Sentiment Score:', f'{sentiment_score:.4f}'],
+        ['Overall Sentiment:', sentiment_category.replace('😊', '').replace('😔', '').replace('😐', '').strip()],
+        ['Polarity Range:', '-1.0 (Most Negative) to +1.0 (Most Positive)']
+    ]
+    
+    results_table = Table(results_data, colWidths=[2*inch, 4*inch])
+    results_table.setStyle(TableStyle([
+        ('FONT', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONT', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#6b7280')),
+        ('TEXTCOLOR', (1, 0), (1, 0), score_color),
+        ('TEXTCOLOR', (1, 1), (1, 1), score_color),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    
+    story.append(results_table)
+    story.append(Spacer(1, 20))
+    
+    # Document Preview (First 200 words)
+    story.append(Paragraph("Document Preview (First 200 Words)", heading_style))
+    
+    # Get first 200 words
+    words = text.split()[:200]
+    preview_text = ' '.join(words)
+    if len(text.split()) > 200:
+        preview_text += "..."
+    
+    # Clean the text for PDF (remove special characters that might cause issues)
+    preview_text = preview_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    
+    story.append(Paragraph(preview_text, normal_style))
+    story.append(Spacer(1, 20))
+    
+    # Interpretation Guide
+    story.append(Paragraph("Interpretation Guide", heading_style))
+    interpretation_text = """
+    • <b>Positive Sentiment (Score > 0.2):</b> The document contains predominantly positive language, expressing favorable opinions, satisfaction, or optimism.<br/>
+    • <b>Negative Sentiment (Score < -0.2):</b> The document contains predominantly negative language, expressing dissatisfaction, criticism, or pessimism.<br/>
+    • <b>Neutral Sentiment (-0.2 ≤ Score ≤ 0.2):</b> The document maintains a balanced or objective tone without strong emotional language.
+    """
+    story.append(Paragraph(interpretation_text, normal_style))
+    
+    # Build PDF
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
 # =========================
 # PAGES
 # =========================
@@ -294,7 +428,28 @@ elif st.session_state.page == "analyze":
                 <div class='value'>{st.session_state.word_count}</div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown("</div></div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Download Report Button
+        col1, col2, col3 = st.columns([1, 1, 2])
+        with col1:
+            pdf_buffer = generate_pdf_report(
+                st.session_state.uploaded_filename,
+                st.session_state.text,
+                st.session_state.sentiment_score,
+                st.session_state.sentiment_category,
+                st.session_state.word_count
+            )
+            
+            st.download_button(
+                label="📥 Download PDF Report",
+                data=pdf_buffer,
+                file_name=f"sentiment_analysis_{st.session_state.uploaded_filename.split('.')[0]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                mime="application/pdf",
+                help="Download the complete sentiment analysis report as PDF"
+            )
+        
+        st.markdown("</div>", unsafe_allow_html=True)
 
         # Preview
         st.markdown("<div class='card'>", unsafe_allow_html=True)
@@ -317,7 +472,8 @@ elif st.session_state.page == "about":
     • Python<br>
     • TextBlob (Sentiment Analysis)<br>
     • pdfplumber & python-docx (Text Extraction)<br>
-    • Streamlit (Web Deployment)
+    • Streamlit (Web Deployment)<br>
+    • ReportLab (PDF Report Generation)
     </div>
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
