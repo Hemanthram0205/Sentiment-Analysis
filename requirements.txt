@@ -1,5 +1,0 @@
-streamlit
-textblob
-pdfplumber
-python-docx
-fpdf
