@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Analyzer - Advanced Text Analysis Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-shadow { box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        .highlight-positive { background-color: #d4edda; padding: 2px 4px; border-radius: 4px; }
+        .highlight-negative { background-color: #f8d7da; padding: 2px 4px; border-radius: 4px; }
+        .highlight-neutral { background-color: #fff3cd; padding: 2px 4px; border-radius: 4px; }
+        .highlight-entity { background-color: #cfe2ff; padding: 2px 4px; border-radius: 4px; border-bottom: 2px solid #0d6efd; }
+        .highlight-keyword { background-color: #e2e3ff; padding: 2px 4px; border-radius: 4px; font-weight: 600; }
+        .preview-scroll { max-height: 300px; overflow-y: auto; }
+        input:focus, button:focus, textarea:focus, select:focus { outline: none; }
+        .tab-active { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); color: #2563eb; }
+        .analysis-type-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+        .confidence-bar { height: 8px; border-radius: 4px; background: #e5e7eb; overflow: hidden; }
+        .confidence-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        .entity-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 12px; margin: 2px; }
+        .keyword-tag { display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: 13px; margin: 3px; background: #f3f4f6; border: 1px solid #e5e7eb; }
+        pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+        code { font-family: 'Monaco', 'Menlo', monospace; }
+        .emotion-bar { height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; font-size: 13px; color: white; font-weight: 600; min-width: 60px; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app">
+        <!-- Login Page -->
+        <div id="loginPage" class="min-h-screen flex items-center justify-center gradient-bg p-4">
+            <div class="bg-white rounded-2xl card-shadow p-8 w-full max-w-md">
+                <div class="text-center mb-8">
+                    <div class="text-5xl mb-4">🔬</div>
+                    <h1 class="text-2xl font-bold text-gray-800">Document Analyzer Analysis</h1>
+                    <p class="text-gray-500 mt-2">Advanced Text Analysis Platform</p>
+                </div>
+                
+                <div id="authTabs" class="flex mb-6 bg-gray-100 rounded-lg p-1">
+                    <button onclick="showLoginForm()" id="loginTab" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all bg-white shadow text-blue-600">Login</button>
+                    <button onclick="showRegisterForm()" id="registerTab" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-600">Register</button>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="loginEmail" required class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your email">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="loginPassword" required class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your password">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">Sign In</button>
+                    </div>
+                </form>
+
+                <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                            <input type="text" id="regName" required class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="regEmail" required class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your email">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="regPassword" required minlength="6" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Min 6 characters">
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="isAdmin" class="w-4 h-4 text-blue-600 rounded">
+                            <label for="isAdmin" class="ml-2 text-sm text-gray-600">Register as Admin</label>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">Create Account</button>
+                    </div>
+                </form>
+
+                <div id="authMessage" class="mt-4 text-center text-sm hidden"></div>
+                
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <p class="text-xs text-blue-800 font-medium">Demo Credentials:</p>
+                    <p class="text-xs text-blue-600">Admin: admin@demo.com / admin123</p>
+                    <p class="text-xs text-blue-600">User: user@demo.com / user123</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="mainApp" class="hidden">
+            <!-- Navbar -->
+            <nav class="bg-white shadow-sm border-b border-gray-100">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between h-16 items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">🔬</span>
+                            <span class="text-xl font-bold text-blue-900">Document Analyzer</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="showPage('home')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">🏠 Home</button>
+                            <button onclick="showPage('analyze')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">🧠 Analyze</button>
+                            <button onclick="showPage('batch')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">📦 Batch</button>
+                            <button onclick="showPage('api')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">🔌 API</button>
+                            <button onclick="showPage('history')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">📜 History</button>
+                            <button id="adminBtn" onclick="showPage('admin')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-purple-600 hover:bg-purple-50 hidden">👑 Admin</button>
+                            <div class="flex items-center gap-2 ml-4 pl-4 border-l">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span id="userInitial" class="text-blue-600 font-semibold text-sm">U</span>
+                                </div>
+                                <span id="userName" class="text-sm font-medium text-gray-700">User</span>
+                                <button onclick="logout()" class="ml-2 text-red-500 hover:text-red-700 text-sm">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Pages Container -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Home Page -->
+                <div id="homePage" class="page">
+                    <!-- Welcome Banner -->
+                    <div class="bg-white rounded-2xl card-shadow p-8 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h1 class="text-3xl font-bold text-blue-900 mb-2">Welcome back, <span id="homeUserName">User</span>! 👋</h1>
+                                <p class="text-gray-500">Here's your analysis dashboard overview</p>
+                            </div>
+                            <button onclick="showPage('analyze')" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+                                🧠 New Analysis
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl card-shadow p-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <span class="text-2xl">📊</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">My Analyses</p>
+                                    <p id="homeMyAnalyses" class="text-2xl font-bold text-blue-900">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl card-shadow p-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                    <span class="text-2xl">😊</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Positive</p>
+                                    <p id="homePositive" class="text-2xl font-bold text-green-600">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl card-shadow p-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                                    <span class="text-2xl">😔</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Negative</p>
+                                    <p id="homeNegative" class="text-2xl font-bold text-red-600">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl card-shadow p-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                                    <span class="text-2xl">😐</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Neutral</p>
+                                    <p id="homeNeutral" class="text-2xl font-bold text-yellow-600">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Analyses Section -->
+                    <div class="bg-white rounded-2xl card-shadow p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-blue-900">📋 Recent Analyses</h2>
+                            <button onclick="showPage('history')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View All →</button>
+                        </div>
+                        <div id="homeRecentAnalyses" class="space-y-3">
+                            <p class="text-gray-500 text-center py-6">No analyses yet. Start by analyzing some text!</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions & Features -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Quick Actions -->
+                        <div class="bg-white rounded-xl card-shadow p-6">
+                            <h3 class="font-bold text-gray-800 mb-4">⚡ Quick Actions</h3>
+                            <div class="space-y-3">
+                                <button onclick="showPage('analyze')" class="w-full flex items-center gap-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-left">
+                                    <span class="text-xl">🧠</span>
+                                    <div>
+                                        <p class="font-medium text-gray-800">Analyze Text</p>
+                                        <p class="text-xs text-gray-500">Paste text or upload a file</p>
+                                    </div>
+                                </button>
+                                <button onclick="showPage('batch')" class="w-full flex items-center gap-3 p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-left">
+                                    <span class="text-xl">📦</span>
+                                    <div>
+                                        <p class="font-medium text-gray-800">Batch Analysis</p>
+                                        <p class="text-xs text-gray-500">Process multiple files at once</p>
+                                    </div>
+                                </button>
+                                <button onclick="showPage('api')" class="w-full flex items-center gap-3 p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors text-left">
+                                    <span class="text-xl">🔌</span>
+                                    <div>
+                                        <p class="font-medium text-gray-800">API Access</p>
+                                        <p class="text-xs text-gray-500">Get your API key for integration</p>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Types -->
+                        <div class="bg-white rounded-xl card-shadow p-6">
+                            <h3 class="font-bold text-gray-800 mb-4">🔬 Analysis Types Available</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="p-3 bg-blue-50 rounded-lg">
+                                    <div class="text-xl mb-1">😊</div>
+                                    <p class="text-sm font-medium text-blue-900">Sentiment</p>
+                                    <p class="text-xs text-gray-500">Positive/Negative tone</p>
+                                </div>
+                                <div class="p-3 bg-green-50 rounded-lg">
+                                    <div class="text-xl mb-1">🏷️</div>
+                                    <p class="text-sm font-medium text-green-900">Entities</p>
+                                    <p class="text-xs text-gray-500">Names, places, orgs</p>
+                                </div>
+                                <div class="p-3 bg-purple-50 rounded-lg">
+                                    <div class="text-xl mb-1">🔑</div>
+                                    <p class="text-sm font-medium text-purple-900">Keywords</p>
+                                    <p class="text-xs text-gray-500">Key terms extraction</p>
+                                </div>
+                                <div class="p-3 bg-yellow-50 rounded-lg">
+                                    <div class="text-xl mb-1">🌍</div>
+                                    <p class="text-sm font-medium text-yellow-900">Language</p>
+                                    <p class="text-xs text-gray-500">Auto-detect language</p>
+                                </div>
+                                <div class="p-3 bg-red-50 rounded-lg">
+                                    <div class="text-xl mb-1">❤️</div>
+                                    <p class="text-sm font-medium text-red-900">Emotions</p>
+                                    <p class="text-xs text-gray-500">Joy, anger, fear, etc.</p>
+                                </div>
+                                <div class="p-3 bg-indigo-50 rounded-lg">
+                                    <div class="text-xl mb-1">📝</div>
+                                    <p class="text-sm font-medium text-indigo-900">Summary</p>
+                                    <p class="text-xs text-gray-500">Auto summarization</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analyze Page -->
+                <div id="analyzePage" class="page hidden">
+                    <!-- Input Section - Full Width -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-2xl card-shadow p-6">
+                            <h2 class="text-xl font-bold text-blue-900 mb-4">🧠 Text Analysis</h2>
+                            
+                            <!-- Input Type Tabs -->
+                            <div class="flex mb-4 bg-gray-100 rounded-lg p-1">
+                                <button onclick="switchInputType('text')" id="textTab" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all tab-active">📝 Enter Text</button>
+                                <button onclick="switchInputType('file')" id="fileTab" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all text-gray-600">📁 Upload File</button>
+                            </div>
+
+                            <!-- Text Input -->
+                            <div id="textInputSection">
+                                <textarea id="textInput" rows="10" class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Enter or paste your text here for analysis..."></textarea>
+                                <p class="text-xs text-gray-400 mt-2">Max 50,000 characters</p>
+                            </div>
+
+                            <!-- File Input -->
+                            <div id="fileInputSection" class="hidden">
+                                <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                                    <input type="file" id="fileInput" accept=".pdf,.docx,.xlsx,.xls,.txt,.csv" class="hidden" onchange="handleFileSelect(event)">
+                                    <div class="text-4xl mb-3">📁</div>
+                                    <p class="text-gray-600 font-medium">Click to upload or drag and drop</p>
+                                    <p class="text-gray-400 text-sm mt-2">PDF, DOCX, XLSX, TXT, CSV</p>
+                                </div>
+                                
+                                <div id="fileInfo" class="hidden mt-4 p-4 bg-blue-50 rounded-xl">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <span id="fileIcon" class="text-2xl">📄</span>
+                                            <div>
+                                                <p id="fileName" class="font-medium text-gray-800">filename.pdf</p>
+                                                <p id="fileSize" class="text-sm text-gray-500">0 KB</p>
+                                            </div>
+                                        </div>
+                                        <button onclick="clearFile()" class="text-red-500 hover:text-red-700">✕</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- File Preview Section -->
+                                <div id="filePreviewSection" class="hidden mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="font-medium text-gray-700">📄 File Preview</h4>
+                                        <span id="previewWordCount" class="text-xs text-gray-500">0 words</span>
+                                    </div>
+                                    <div id="filePreviewText" class="max-h-40 overflow-y-auto text-sm text-gray-600 leading-relaxed"></div>
+                                    <p class="text-xs text-gray-400 mt-2">Click "Run Analysis" below to analyze this text</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Types -->
+                        <div class="bg-white rounded-2xl card-shadow p-6 h-fit">
+                            <h3 class="font-bold text-gray-800 mb-4">Select Analysis Types</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="toggleAnalysisType('sentiment')" id="btn-sentiment" class="analysis-type-btn active flex items-center gap-2 p-3 border-2 border-blue-500 rounded-lg text-sm font-medium transition-all">
+                                    😊 Sentiment Analysis
+                                </button>
+                                <button onclick="toggleAnalysisType('entities')" id="btn-entities" class="analysis-type-btn flex items-center gap-2 p-3 border-2 border-gray-200 rounded-lg text-sm font-medium transition-all hover:border-blue-300">
+                                    🏷️ Named Entities
+                                </button>
+                                <button onclick="toggleAnalysisType('keywords')" id="btn-keywords" class="analysis-type-btn flex items-center gap-2 p-3 border-2 border-gray-200 rounded-lg text-sm font-medium transition-all hover:border-blue-300">
+                                    🔑 Keywords
+                                </button>
+                                <button onclick="toggleAnalysisType('language')" id="btn-language" class="analysis-type-btn flex items-center gap-2 p-3 border-2 border-gray-200 rounded-lg text-sm font-medium transition-all hover:border-blue-300">
+                                    🌍 Language Detection
+                                </button>
+                                <button onclick="toggleAnalysisType('emotions')" id="btn-emotions" class="analysis-type-btn flex items-center gap-2 p-3 border-2 border-gray-200 rounded-lg text-sm font-medium transition-all hover:border-blue-300">
+                                    ❤️ Emotion Detection
+                                </button>
+                                <button onclick="toggleAnalysisType('summary')" id="btn-summary" class="analysis-type-btn flex items-center gap-2 p-3 border-2 border-gray-200 rounded-lg text-sm font-medium transition-all hover:border-blue-300">
+                                    📝 Summarization
+                                </button>
+                            </div>
+                            
+                            <button onclick="runAnalysis()" id="analyzeBtn" class="w-full mt-6 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+                                🔬 Run Analysis
+                            </button>
+                            
+                            <div id="loadingSpinner" class="hidden mt-4 text-center">
+                                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+                                <p class="text-gray-500 mt-2">Analyzing text...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Section - Full Width Grid -->
+                    <div id="resultsSection" class="hidden">
+                        <h2 class="text-xl font-bold text-blue-900 mb-4">📊 Analysis Results</h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Sentiment Results -->
+                            <div id="sentimentResults" class="bg-white rounded-2xl card-shadow p-6 hidden">
+                                <h3 class="font-bold text-blue-900 mb-4">😊 Sentiment Analysis</h3>
+                                <div class="grid grid-cols-3 gap-4 mb-4">
+                                    <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                        <p class="text-sm text-gray-500">Score</p>
+                                        <p id="sentimentScore" class="text-2xl font-bold text-blue-900 mt-1">0.00</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                        <p class="text-sm text-gray-500">Sentiment</p>
+                                        <p id="sentimentLabel" class="text-xl font-bold mt-1">Neutral</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                        <p class="text-sm text-gray-500">Confidence</p>
+                                        <p id="sentimentConfidence" class="text-2xl font-bold text-green-600 mt-1">0%</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-green-600">Positive</span>
+                                        <span id="positivePercent">0%</span>
+                                    </div>
+                                    <div class="confidence-bar"><div id="positiveBar" class="confidence-fill bg-green-500" style="width:0%"></div></div>
+                                    <div class="flex justify-between text-sm mt-2">
+                                        <span class="text-red-600">Negative</span>
+                                        <span id="negativePercent">0%</span>
+                                    </div>
+                                    <div class="confidence-bar"><div id="negativeBar" class="confidence-fill bg-red-500" style="width:0%"></div></div>
+                                    <div class="flex justify-between text-sm mt-2">
+                                        <span class="text-yellow-600">Neutral</span>
+                                        <span id="neutralPercent">0%</span>
+                                    </div>
+                                    <div class="confidence-bar"><div id="neutralBar" class="confidence-fill bg-yellow-500" style="width:0%"></div></div>
+                                </div>
+                            </div>
+
+                            <!-- Entities Results -->
+                            <div id="entitiesResults" class="bg-white rounded-2xl card-shadow p-6 hidden">
+                                <h3 class="font-bold text-blue-900 mb-4">🏷️ Named Entities</h3>
+                                <div id="entitiesList" class="flex flex-wrap gap-2"></div>
+                            </div>
+
+                            <!-- Keywords Results -->
+                            <div id="keywordsResults" class="bg-white rounded-2xl card-shadow p-6 hidden">
+                                <h3 class="font-bold text-blue-900 mb-4">🔑 Keywords & Key Phrases</h3>
+                                <div id="keywordsList" class="flex flex-wrap"></div>
+                            </div>
+
+                            <!-- Language Results -->
+                            <div id="languageResults" class="bg-white rounded-2xl card-shadow p-6 hidden">
+                                <h3 class="font-bold text-blue-900 mb-4">🌍 Language Detection</h3>
+                                <div id="languageInfo" class="flex items-center gap-4">
+                                    <div class="text-4xl" id="languageFlag">🌐</div>
+                                    <div>
+                                        <p class="text-xl font-bold text-gray-800" id="languageName">Unknown</p>
+                                        <p class="text-sm text-gray-500">Confidence: <span id="languageConfidence">0%</span></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Emotions Results -->
+                            <div id="emotionsResults" class="bg-white rounded-2xl card-shadow p-6 hidden">
+                                <h3 class="font-bold text-blue-900 mb-4">❤️ Emotion Analysis</h3>
+                                <div id="emotionsList" class="space-y-3"></div>
+                            </div>
+
+                            <!-- Summary Results -->
+                            <div id="summaryResults" class="bg-white rounded-2xl card-shadow p-6 hidden">
+                                <h3 class="font-bold text-blue-900 mb-4">📝 Text Summary</h3>
+                                <div id="summaryText" class="p-4 bg-gray-50 rounded-xl text-gray-700 leading-relaxed"></div>
+                                <div class="mt-4 flex gap-4 text-sm text-gray-500">
+                                    <span>Original: <strong id="originalWords">0</strong> words</span>
+                                    <span>Summary: <strong id="summaryWords">0</strong> words</span>
+                                    <span>Reduction: <strong id="reductionPercent">0%</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- Text Preview -->
+                            <div id="previewSection" class="bg-white rounded-2xl card-shadow p-6 lg:col-span-2">
+                                <h3 class="font-bold text-blue-900 mb-2">📄 Analyzed Text</h3>
+                                <p class="text-gray-500 text-sm mb-4">Word count: <span id="wordCount">0</span></p>
+                                <div id="documentPreview" class="preview-scroll p-4 bg-gray-50 rounded-xl border-l-4 border-blue-400 text-gray-700 leading-relaxed text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch Page -->
+                <div id="batchPage" class="page hidden">
+                    <div class="bg-white rounded-2xl card-shadow p-6">
+                        <h2 class="text-xl font-bold text-blue-900 mb-2">📦 Batch Analysis</h2>
+                        <p class="text-gray-500 text-sm mb-6">Upload multiple files for bulk analysis</p>
+                        
+                        <div id="batchDropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors cursor-pointer" onclick="document.getElementById('batchFileInput').click()">
+                            <input type="file" id="batchFileInput" accept=".pdf,.docx,.xlsx,.xls,.txt,.csv" multiple class="hidden" onchange="handleBatchFiles(event)">
+                            <div class="text-5xl mb-4">📁</div>
+                            <p class="text-gray-600 font-medium">Drop multiple files here or click to select</p>
+                            <p class="text-gray-400 text-sm mt-2">PDF, DOCX, XLSX, TXT, CSV (Max 10 files)</p>
+                        </div>
+
+                        <div id="batchFilesList" class="mt-6 space-y-3 hidden"></div>
+                        
+                        <button onclick="runBatchAnalysis()" id="batchAnalyzeBtn" class="w-full mt-6 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+                            🔬 Analyze All Files
+                        </button>
+
+                        <div id="batchResults" class="mt-6 hidden">
+                            <h3 class="font-bold text-gray-800 mb-4">Results</h3>
+                            <div id="batchResultsList" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Page -->
+                <div id="apiPage" class="page hidden">
+                    <div class="bg-white rounded-2xl card-shadow p-6">
+                        <h2 class="text-xl font-bold text-blue-900 mb-2">🔌 API Documentation</h2>
+                        <p class="text-gray-500 text-sm mb-6">Integrate text analysis into your applications</p>
+                        
+                        <div class="mb-6 p-4 bg-blue-50 rounded-xl">
+                            <p class="text-sm text-blue-800 font-medium">Your API Key</p>
+                            <div class="flex items-center gap-3 mt-2">
+                                <code id="apiKey" class="flex-1 bg-white px-4 py-2 rounded border text-sm">xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code>
+                                <button onclick="copyApiKey()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Copy</button>
+                                <button onclick="regenerateApiKey()" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700">Regenerate</button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="font-bold text-gray-800 mb-3">📍 Endpoint</h3>
+                                <pre><code>POST https://api.Document Analyzer.com/v1/analyze</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-gray-800 mb-3">📨 Request Headers</h3>
+                                <pre><code>Content-Type: application/json
+Authorization: Bearer YOUR_API_KEY</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-gray-800 mb-3">📤 Request Body</h3>
+                                <pre><code>{
+  "text": "Your text to analyze here...",
+  "analyses": ["sentiment", "entities", "keywords", "language", "emotions", "summary"],
+  "options": {
+    "language": "auto",
+    "summaryLength": "short"
+  }
+}</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-gray-800 mb-3">📥 Response</h3>
+                                <pre><code>{
+  "success": true,
+  "data": {
+    "sentiment": {
+      "score": 0.75,
+      "label": "Positive",
+      "confidence": 0.89,
+      "breakdown": {
+        "positive": 0.75,
+        "negative": 0.10,
+        "neutral": 0.15
+      }
+    },
+    "entities": [
+      {"text": "John Smith", "type": "PERSON", "confidence": 0.95},
+      {"text": "Google", "type": "ORGANIZATION", "confidence": 0.92}
+    ],
+    "keywords": [
+      {"text": "machine learning", "relevance": 0.95},
+      {"text": "artificial intelligence", "relevance": 0.88}
+    ],
+    "language": {
+      "code": "en",
+      "name": "English",
+      "confidence": 0.99
+    },
+    "emotions": {
+      "joy": 0.65,
+      "sadness": 0.05,
+      "anger": 0.02,
+      "fear": 0.03,
+      "surprise": 0.15,
+      "disgust": 0.01
+    },
+    "summary": "A concise summary of the analyzed text..."
+  }
+}</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-gray-800 mb-3">💻 Code Examples</h3>
+                                <div class="flex gap-2 mb-3">
+                                    <button onclick="showCodeExample('python')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm font-medium">Python</button>
+                                    <button onclick="showCodeExample('javascript')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium">JavaScript</button>
+                                    <button onclick="showCodeExample('curl')" class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium">cURL</button>
+                                </div>
+                                <pre id="codeExample"><code>import requests
+
+response = requests.post(
+    "https://api.Document Analyzer.com/v1/analyze",
+    headers={
+        "Authorization": "Bearer YOUR_API_KEY",
+        "Content-Type": "application/json"
+    },
+    json={
+        "text": "Your text here...",
+        "analyses": ["sentiment", "entities"]
+    }
+)
+
+result = response.json()
+print(result)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Page -->
+                <div id="historyPage" class="page hidden">
+                    <div class="bg-white rounded-2xl card-shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-blue-900">📜 Your Analysis History</h2>
+                                <p id="historySubtitle" class="text-sm text-gray-500 mt-1">Showing your personal analysis records</p>
+                            </div>
+                            <button onclick="clearHistory()" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100">Clear My History</button>
+                        </div>
+                        <div class="mb-4 p-3 bg-blue-50 rounded-lg flex items-center gap-2">
+                            <span class="text-blue-600">ℹ️</span>
+                            <p class="text-sm text-blue-700">You can only view your own analysis history. Admins can see all users' data in the Admin Dashboard.</p>
+                        </div>
+                        <div id="historyList" class="space-y-4">
+                            <p class="text-gray-500 text-center py-8">No analysis history yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Page -->
+                <div id="adminPage" class="page hidden">
+                    <!-- Admin Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl card-shadow p-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                                    <span class="text-2xl">👥</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Total Users</p>
+                                    <p id="totalUsers" class="text-2xl font-bold text-purple-900">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl card-shadow p-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <span class="text-2xl">📊</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Total Analyses</p>
+                                    <p id="totalAnalyses" class="text-2xl font-bold text-blue-900">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl card-shadow p-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                    <span class="text-2xl">😊</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Positive Results</p>
+                                    <p id="adminPositive" class="text-2xl font-bold text-green-600">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl card-shadow p-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                                    <span class="text-2xl">😔</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Negative Results</p>
+                                    <p id="adminNegative" class="text-2xl font-bold text-red-600">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- All User Analyses Table -->
+                    <div class="bg-white rounded-2xl card-shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-purple-900">👑 All User Analyses</h2>
+                                <p class="text-gray-500 text-sm">Complete analysis history from all users</p>
+                            </div>
+                            <button onclick="refreshAdminData()" class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors">
+                                🔄 Refresh Data
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">User</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Source</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Types</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Sentiment</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Words</th>
+                                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // ==================== DATABASE ====================
+        const DB = {
+            getUsers: () => JSON.parse(localStorage.getItem('Document Analyzer_users') || '[]'),
+            saveUsers: (users) => localStorage.setItem('Document Analyzer_users', JSON.stringify(users)),
+            getAnalyses: () => JSON.parse(localStorage.getItem('Document Analyzer_analyses') || '[]'),
+            saveAnalyses: (analyses) => localStorage.setItem('Document Analyzer_analyses', JSON.stringify(analyses)),
+            getCurrentUser: () => JSON.parse(localStorage.getItem('Document Analyzer_current_user') || 'null'),
+            setCurrentUser: (user) => localStorage.setItem('Document Analyzer_current_user', JSON.stringify(user)),
+            clearCurrentUser: () => localStorage.removeItem('Document Analyzer_current_user')
+        };
+
+        function initDemoAccounts() {
+            const users = DB.getUsers();
+            if (users.length === 0) {
+                DB.saveUsers([
+                    { id: 1, name: 'Admin User', email: 'admin@demo.com', password: 'admin123', isAdmin: true, apiKey: 'admin-' + generateApiKey() },
+                    { id: 2, name: 'Regular User', email: 'user@demo.com', password: 'user123', isAdmin: false, apiKey: 'user-' + generateApiKey() }
+                ]);
+            }
+        }
+        initDemoAccounts();
+
+        function generateApiKey() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        }
+
+        // ==================== AUTH ====================
+        let currentUser = null;
+        let selectedFile = null;
+        let batchFiles = [];
+        let selectedAnalysisTypes = ['sentiment'];
+
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginTab').classList.add('bg-white', 'shadow', 'text-blue-600');
+            document.getElementById('loginTab').classList.remove('text-gray-600');
+            document.getElementById('registerTab').classList.remove('bg-white', 'shadow', 'text-blue-600');
+            document.getElementById('registerTab').classList.add('text-gray-600');
+        }
+
+        function showRegisterForm() {
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerTab').classList.add('bg-white', 'shadow', 'text-blue-600');
+            document.getElementById('registerTab').classList.remove('text-gray-600');
+            document.getElementById('loginTab').classList.remove('bg-white', 'shadow', 'text-blue-600');
+            document.getElementById('loginTab').classList.add('text-gray-600');
+        }
+
+        function showMessage(msg, isError = false) {
+            const el = document.getElementById('authMessage');
+            el.textContent = msg;
+            el.className = `mt-4 text-center text-sm ${isError ? 'text-red-600' : 'text-green-600'}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const users = DB.getUsers();
+            const user = users.find(u => u.email === email && u.password === password);
+            if (user) {
+                currentUser = user;
+                DB.setCurrentUser(user);
+                showMainApp();
+            } else {
+                showMessage('Invalid email or password', true);
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const isAdmin = document.getElementById('isAdmin').checked;
+            const users = DB.getUsers();
+            if (users.find(u => u.email === email)) {
+                showMessage('Email already registered', true);
+                return;
+            }
+            const newUser = { id: Date.now(), name, email, password, isAdmin, apiKey: generateApiKey() };
+            users.push(newUser);
+            DB.saveUsers(users);
+            showMessage('Account created! Please login.');
+            setTimeout(showLoginForm, 1500);
+        }
+
+        function logout() {
+            currentUser = null;
+            DB.clearCurrentUser();
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userInitial').textContent = currentUser.name.charAt(0).toUpperCase();
+            document.getElementById('apiKey').textContent = currentUser.apiKey;
+            document.getElementById('adminBtn').classList.toggle('hidden', !currentUser.isAdmin);
+            showPage('home');
+            loadHomeData();
+        }
+
+        function checkSession() {
+            const savedUser = DB.getCurrentUser();
+            if (savedUser) {
+                currentUser = savedUser;
+                showMainApp();
+            }
+        }
+        checkSession();
+
+        // ==================== NAVIGATION ====================
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(pageName + 'Page').classList.remove('hidden');
+            if (pageName === 'home') loadHomeData();
+            if (pageName === 'history') loadHistory();
+            if (pageName === 'admin') loadAdminData();
+        }
+
+        // ==================== HOME PAGE DATA ====================
+        function loadHomeData() {
+            if (!currentUser) return;
+            
+            // Update username
+            document.getElementById('homeUserName').textContent = currentUser.name.split(' ')[0];
+            
+            // Get user's analyses
+            const allAnalyses = DB.getAnalyses();
+            const myAnalyses = allAnalyses.filter(a => a.userId === currentUser.id);
+            
+            // Calculate stats
+            const positive = myAnalyses.filter(a => a.sentiment && a.sentiment.includes('Positive')).length;
+            const negative = myAnalyses.filter(a => a.sentiment && a.sentiment.includes('Negative')).length;
+            const neutral = myAnalyses.filter(a => a.sentiment && a.sentiment.includes('Neutral')).length;
+            
+            // Update stats
+            document.getElementById('homeMyAnalyses').textContent = myAnalyses.length;
+            document.getElementById('homePositive').textContent = positive;
+            document.getElementById('homeNegative').textContent = negative;
+            document.getElementById('homeNeutral').textContent = neutral;
+            
+            // Load recent analyses (last 5)
+            const recentContainer = document.getElementById('homeRecentAnalyses');
+            const recentAnalyses = myAnalyses.slice(-5).reverse();
+            
+            if (recentAnalyses.length === 0) {
+                recentContainer.innerHTML = '<p class="text-gray-500 text-center py-6">No analyses yet. Start by analyzing some text!</p>';
+            } else {
+                recentContainer.innerHTML = recentAnalyses.map(a => `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">${getFileIcon(a.source)}</span>
+                            <div>
+                                <p class="font-medium text-gray-800 text-sm">${a.source}</p>
+                                <p class="text-xs text-gray-500">${new Date(a.date).toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm px-2 py-1 rounded ${getSentimentClass(a.sentiment)}">${a.sentiment}</span>
+                            <span class="text-xs text-gray-500">${a.wordCount} words</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function getSentimentClass(sentiment) {
+            if (!sentiment) return 'bg-gray-100 text-gray-600';
+            if (sentiment.includes('Positive')) return 'bg-green-100 text-green-700';
+            if (sentiment.includes('Negative')) return 'bg-red-100 text-red-700';
+            return 'bg-yellow-100 text-yellow-700';
+        }
+
+        // ==================== INPUT HANDLING ====================
+        function switchInputType(type) {
+            const textSection = document.getElementById('textInputSection');
+            const fileSection = document.getElementById('fileInputSection');
+            const textTab = document.getElementById('textTab');
+            const fileTab = document.getElementById('fileTab');
+            
+            if (type === 'text') {
+                textSection.classList.remove('hidden');
+                fileSection.classList.add('hidden');
+                textTab.classList.add('tab-active');
+                fileTab.classList.remove('tab-active');
+                fileTab.classList.add('text-gray-600');
+            } else {
+                textSection.classList.add('hidden');
+                fileSection.classList.remove('hidden');
+                fileTab.classList.add('tab-active');
+                textTab.classList.remove('tab-active');
+                textTab.classList.add('text-gray-600');
+            }
+        }
+
+        function toggleAnalysisType(type) {
+            const btn = document.getElementById('btn-' + type);
+            const idx = selectedAnalysisTypes.indexOf(type);
+            if (idx > -1) {
+                selectedAnalysisTypes.splice(idx, 1);
+                btn.classList.remove('active');
+                btn.classList.remove('border-blue-500');
+                btn.classList.add('border-gray-200');
+            } else {
+                selectedAnalysisTypes.push(type);
+                btn.classList.add('active');
+                btn.classList.add('border-blue-500');
+                btn.classList.remove('border-gray-200');
+            }
+        }
+
+        let extractedFileText = ''; // Store extracted text from file
+
+        async function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            selectedFile = file;
+            const ext = file.name.split('.').pop().toLowerCase();
+            let icon = '📄';
+            if (ext === 'pdf') icon = '📕';
+            else if (ext === 'docx') icon = '📘';
+            else if (ext === 'xlsx' || ext === 'xls') icon = '📗';
+            else if (ext === 'txt') icon = '📝';
+            else if (ext === 'csv') icon = '📊';
+            document.getElementById('fileIcon').textContent = icon;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('fileInfo').classList.remove('hidden');
+            
+            // Extract text and show preview (but don't analyze yet)
+            try {
+                document.getElementById('filePreviewSection').classList.remove('hidden');
+                document.getElementById('filePreviewText').innerHTML = '<span class="text-blue-500">Extracting text from file...</span>';
+                
+                extractedFileText = await extractText(file);
+                const wordCount = extractedFileText.split(/\s+/).filter(w => w.length > 0).length;
+                document.getElementById('previewWordCount').textContent = wordCount + ' words';
+                
+                // Show first 500 characters as preview
+                const previewText = extractedFileText.substring(0, 500) + (extractedFileText.length > 500 ? '...' : '');
+                document.getElementById('filePreviewText').textContent = previewText;
+                
+                if (!extractedFileText.trim()) {
+                    document.getElementById('filePreviewText').innerHTML = '<span class="text-red-500">No text could be extracted from this file.</span>';
+                }
+            } catch (err) {
+                document.getElementById('filePreviewText').innerHTML = '<span class="text-red-500">Error reading file: ' + err.message + '</span>';
+                extractedFileText = '';
+            }
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            extractedFileText = '';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').classList.add('hidden');
+            document.getElementById('filePreviewSection').classList.add('hidden');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // ==================== FILE PARSING ====================
+        async function extractText(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (ext === 'pdf') {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let text = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    text += content.items.map(item => item.str).join(' ') + '\n';
+                }
+                return text;
+            } else if (ext === 'docx') {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer });
+                return result.value;
+            } else if (ext === 'xlsx' || ext === 'xls') {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                let text = '';
+                workbook.SheetNames.forEach(sheetName => {
+                    const sheet = workbook.Sheets[sheetName];
+                    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    data.forEach(row => { text += row.join(' ') + '\n'; });
+                });
+                return text;
+            } else if (ext === 'txt' || ext === 'csv') {
+                return await file.text();
+            }
+            return '';
+        }
+
+        // ==================== ANALYSIS FUNCTIONS ====================
+        const positiveWords = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'awesome', 'love', 'happy', 'joy', 'beautiful', 'best', 'perfect', 'brilliant', 'outstanding', 'superb', 'terrific', 'delightful', 'pleasant', 'positive', 'success', 'successful', 'win', 'winning', 'benefit', 'helpful', 'useful', 'effective', 'impressive', 'remarkable', 'exceptional', 'incredible', 'fabulous', 'magnificent', 'satisfying', 'pleased', 'glad', 'fortunate', 'lucky', 'favorable', 'promising', 'exciting', 'thrilled', 'grateful', 'proud', 'confident', 'optimistic'];
+        const negativeWords = ['bad', 'terrible', 'awful', 'horrible', 'poor', 'worst', 'hate', 'sad', 'angry', 'ugly', 'fail', 'failure', 'wrong', 'error', 'mistake', 'problem', 'issue', 'difficult', 'hard', 'negative', 'loss', 'lose', 'damage', 'harm', 'harmful', 'hurt', 'pain', 'painful', 'suffer', 'unfortunate', 'disappointing', 'frustrated', 'annoying', 'boring', 'useless', 'worthless', 'weak', 'inferior', 'mediocre', 'inadequate', 'terrible', 'dreadful', 'miserable', 'tragic', 'hopeless', 'worried', 'anxious', 'scared', 'afraid'];
+        
+        const emotionWords = {
+            joy: ['happy', 'joy', 'excited', 'delighted', 'pleased', 'thrilled', 'ecstatic', 'cheerful', 'elated', 'jubilant', 'love', 'wonderful', 'amazing', 'fantastic'],
+            sadness: ['sad', 'unhappy', 'depressed', 'miserable', 'heartbroken', 'grief', 'sorrow', 'melancholy', 'gloomy', 'disappointed', 'hopeless', 'lonely', 'hurt'],
+            anger: ['angry', 'furious', 'rage', 'irritated', 'annoyed', 'frustrated', 'outraged', 'hostile', 'bitter', 'resentful', 'hate', 'mad', 'livid'],
+            fear: ['afraid', 'scared', 'fearful', 'terrified', 'anxious', 'worried', 'nervous', 'panicked', 'frightened', 'alarmed', 'dread', 'horror'],
+            surprise: ['surprised', 'amazed', 'astonished', 'shocked', 'stunned', 'startled', 'unexpected', 'incredible', 'unbelievable', 'wow'],
+            disgust: ['disgusted', 'revolted', 'repulsed', 'sickened', 'gross', 'nasty', 'awful', 'terrible', 'horrible', 'offensive']
+        };
+
+        const entityPatterns = {
+            PERSON: /\b[A-Z][a-z]+ [A-Z][a-z]+\b/g,
+            ORGANIZATION: /\b(Google|Microsoft|Apple|Amazon|Facebook|Meta|Tesla|IBM|Intel|Netflix|Twitter|LinkedIn|Uber|Airbnb|Spotify|Adobe|Oracle|Salesforce|SAP|Cisco|HP|Dell|Sony|Samsung|LG|Huawei|Alibaba|Tencent|Baidu)\b/gi,
+            LOCATION: /\b(New York|Los Angeles|Chicago|Houston|Phoenix|Philadelphia|San Antonio|San Diego|Dallas|San Jose|London|Paris|Tokyo|Beijing|Shanghai|Mumbai|Dubai|Singapore|Sydney|Toronto|Berlin|Madrid|Rome|Amsterdam|Seoul|Bangkok|Moscow|Cairo|Lagos|Nairobi|USA|UK|China|India|Japan|Germany|France|Brazil|Canada|Australia)\b/gi,
+            DATE: /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b/gi,
+            EMAIL: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+            URL: /https?:\/\/[^\s]+/g,
+            MONEY: /\$[\d,]+(?:\.\d{2})?|\b\d+(?:,\d{3})*(?:\.\d{2})?\s*(?:dollars?|USD|EUR|GBP|JPY)\b/gi
+        };
+
+        const languagePatterns = {
+            en: { name: 'English', flag: '🇬🇧', words: ['the', 'is', 'are', 'was', 'were', 'have', 'has', 'been', 'being', 'and', 'or', 'but', 'with', 'for', 'that', 'this'] },
+            es: { name: 'Spanish', flag: '🇪🇸', words: ['el', 'la', 'los', 'las', 'de', 'en', 'que', 'es', 'por', 'con', 'para', 'como', 'pero', 'más', 'este', 'esta'] },
+            fr: { name: 'French', flag: '🇫🇷', words: ['le', 'la', 'les', 'de', 'du', 'des', 'et', 'est', 'que', 'qui', 'dans', 'pour', 'pas', 'sur', 'avec', 'plus'] },
+            de: { name: 'German', flag: '🇩🇪', words: ['der', 'die', 'das', 'und', 'ist', 'von', 'mit', 'für', 'auf', 'nicht', 'auch', 'als', 'eine', 'aber', 'oder'] },
+            it: { name: 'Italian', flag: '🇮🇹', words: ['il', 'la', 'di', 'che', 'non', 'per', 'una', 'sono', 'con', 'come', 'anche', 'più', 'del', 'della'] },
+            pt: { name: 'Portuguese', flag: '🇵🇹', words: ['o', 'a', 'os', 'as', 'de', 'que', 'em', 'para', 'com', 'não', 'uma', 'por', 'mais', 'como'] },
+            zh: { name: 'Chinese', flag: '🇨🇳', words: ['的', '是', '在', '了', '和', '有', '我', '他', '这', '中', '人', '们', '为', '来'] },
+            ja: { name: 'Japanese', flag: '🇯🇵', words: ['の', 'は', 'に', 'を', 'が', 'と', 'で', 'て', 'た', 'です', 'ます', 'する', 'ない'] },
+            ko: { name: 'Korean', flag: '🇰🇷', words: ['의', '이', '가', '은', '는', '을', '를', '에', '와', '과', '도', '로', '으로'] },
+            ar: { name: 'Arabic', flag: '🇸🇦', words: ['من', 'في', 'على', 'إلى', 'أن', 'هذا', 'التي', 'الذي', 'كان', 'قد', 'ما', 'هو'] }
+        };
+
+        function analyzeSentiment(text) {
+            const words = text.toLowerCase().match(/\b[a-z]+\b/g) || [];
+            let posCount = 0, negCount = 0;
+            words.forEach(word => {
+                if (positiveWords.includes(word)) posCount++;
+                if (negativeWords.includes(word)) negCount++;
+            });
+            const total = posCount + negCount || 1;
+            const score = (posCount - negCount) / total;
+            const positive = posCount / total;
+            const negative = negCount / total;
+            const neutral = 1 - positive - negative;
+            let label = 'Neutral 😐';
+            if (score > 0.2) label = 'Positive 😊';
+            else if (score < -0.2) label = 'Negative 😔';
+            const confidence = Math.abs(score) * 100;
+            return { score: score.toFixed(2), label, confidence: confidence.toFixed(0), positive: (positive * 100).toFixed(0), negative: (negative * 100).toFixed(0), neutral: (neutral * 100).toFixed(0) };
+        }
+
+        function extractEntities(text) {
+            const entities = [];
+            for (const [type, pattern] of Object.entries(entityPatterns)) {
+                const matches = text.match(pattern) || [];
+                matches.forEach(match => {
+                    if (!entities.find(e => e.text === match)) {
+                        entities.push({ text: match, type, confidence: (0.7 + Math.random() * 0.25).toFixed(2) });
+                    }
+                });
+            }
+            return entities.slice(0, 20);
+        }
+
+        function extractKeywords(text) {
+            const words = text.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
+            const stopWords = ['this', 'that', 'with', 'from', 'have', 'been', 'were', 'they', 'their', 'what', 'when', 'where', 'which', 'while', 'about', 'would', 'there', 'could', 'other', 'after', 'first', 'also', 'made', 'many', 'before', 'being', 'through', 'just', 'over', 'such', 'into', 'year', 'some', 'them', 'than', 'then', 'only', 'come', 'its', 'now', 'between'];
+            const freq = {};
+            words.forEach(w => {
+                if (!stopWords.includes(w)) freq[w] = (freq[w] || 0) + 1;
+            });
+            return Object.entries(freq)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 15)
+                .map(([text, count]) => ({ text, relevance: (count / words.length * 100).toFixed(1) }));
+        }
+
+        function detectLanguage(text) {
+            const words = text.toLowerCase().split(/\s+/);
+            let maxScore = 0;
+            let detected = { code: 'en', name: 'English', flag: '🇬🇧' };
+            for (const [code, lang] of Object.entries(languagePatterns)) {
+                let score = 0;
+                lang.words.forEach(w => { if (words.includes(w)) score++; });
+                if (score > maxScore) {
+                    maxScore = score;
+                    detected = { code, name: lang.name, flag: lang.flag };
+                }
+            }
+            const confidence = Math.min(95, 60 + maxScore * 5);
+            return { ...detected, confidence };
+        }
+
+        function analyzeEmotions(text) {
+            const words = text.toLowerCase().match(/\b[a-z]+\b/g) || [];
+            const emotions = {};
+            let total = 0;
+            for (const [emotion, emotionWordList] of Object.entries(emotionWords)) {
+                let count = 0;
+                emotionWordList.forEach(w => { if (words.includes(w)) count++; });
+                emotions[emotion] = count;
+                total += count;
+            }
+            total = total || 1;
+            for (const emotion of Object.keys(emotions)) {
+                emotions[emotion] = ((emotions[emotion] / total) * 100).toFixed(0);
+            }
+            return emotions;
+        }
+
+        function summarizeText(text) {
+            const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+            const numSentences = Math.max(2, Math.ceil(sentences.length * 0.3));
+            const summary = sentences.slice(0, numSentences).join(' ').trim();
+            return {
+                summary,
+                originalWords: text.split(/\s+/).length,
+                summaryWords: summary.split(/\s+/).length
+            };
+        }
+
+        function highlightText(text) {
+            const words = text.split(/(\s+)/);
+            return words.map(word => {
+                const clean = word.toLowerCase().replace(/[^a-z]/g, '');
+                if (positiveWords.includes(clean)) return `<span class="highlight-positive">${word}</span>`;
+                if (negativeWords.includes(clean)) return `<span class="highlight-negative">${word}</span>`;
+                return word;
+            }).join('');
+        }
+
+        // ==================== RUN ANALYSIS ====================
+        async function runAnalysis() {
+            const textInput = document.getElementById('textInput').value;
+            const textSection = document.getElementById('textInputSection');
+            const isTextMode = !textSection.classList.contains('hidden');
+            
+            let text = '';
+            let source = 'Text Input';
+            
+            if (isTextMode) {
+                text = textInput;
+            } else if (selectedFile) {
+                // Use pre-extracted text if available, otherwise extract now
+                if (extractedFileText && extractedFileText.trim()) {
+                    text = extractedFileText;
+                } else {
+                    try {
+                        text = await extractText(selectedFile);
+                        extractedFileText = text;
+                    } catch (e) {
+                        alert('Error reading file: ' + e.message);
+                        return;
+                    }
+                }
+                source = selectedFile.name;
+            }
+            
+            if (!text.trim()) {
+                alert('Please enter text or upload a file');
+                return;
+            }
+            
+            if (selectedAnalysisTypes.length === 0) {
+                alert('Please select at least one analysis type');
+                return;
+            }
+
+            const spinner = document.getElementById('loadingSpinner');
+            spinner.classList.remove('hidden');
+
+            await new Promise(r => setTimeout(r, 800));
+
+            const results = {};
+            
+            if (selectedAnalysisTypes.includes('sentiment')) {
+                results.sentiment = analyzeSentiment(text);
+            }
+            if (selectedAnalysisTypes.includes('entities')) {
+                results.entities = extractEntities(text);
+            }
+            if (selectedAnalysisTypes.includes('keywords')) {
+                results.keywords = extractKeywords(text);
+            }
+            if (selectedAnalysisTypes.includes('language')) {
+                results.language = detectLanguage(text);
+            }
+            if (selectedAnalysisTypes.includes('emotions')) {
+                results.emotions = analyzeEmotions(text);
+            }
+            if (selectedAnalysisTypes.includes('summary')) {
+                results.summary = summarizeText(text);
+            }
+
+            displayResults(results, text);
+            saveAnalysis(source, text, results);
+            spinner.classList.add('hidden');
+        }
+
+        function displayResults(results, text) {
+            document.getElementById('resultsSection').classList.remove('hidden');
+            
+            // Sentiment
+            const sentimentEl = document.getElementById('sentimentResults');
+            if (results.sentiment) {
+                sentimentEl.classList.remove('hidden');
+                document.getElementById('sentimentScore').textContent = results.sentiment.score;
+                document.getElementById('sentimentLabel').textContent = results.sentiment.label;
+                document.getElementById('sentimentConfidence').textContent = results.sentiment.confidence + '%';
+                document.getElementById('positivePercent').textContent = results.sentiment.positive + '%';
+                document.getElementById('positiveBar').style.width = results.sentiment.positive + '%';
+                document.getElementById('negativePercent').textContent = results.sentiment.negative + '%';
+                document.getElementById('negativeBar').style.width = results.sentiment.negative + '%';
+                document.getElementById('neutralPercent').textContent = results.sentiment.neutral + '%';
+                document.getElementById('neutralBar').style.width = results.sentiment.neutral + '%';
+            } else {
+                sentimentEl.classList.add('hidden');
+            }
+
+            // Entities
+            const entitiesEl = document.getElementById('entitiesResults');
+            if (results.entities) {
+                entitiesEl.classList.remove('hidden');
+                const colors = { PERSON: 'bg-blue-100 text-blue-800', ORGANIZATION: 'bg-purple-100 text-purple-800', LOCATION: 'bg-green-100 text-green-800', DATE: 'bg-yellow-100 text-yellow-800', EMAIL: 'bg-red-100 text-red-800', URL: 'bg-indigo-100 text-indigo-800', MONEY: 'bg-emerald-100 text-emerald-800' };
+                document.getElementById('entitiesList').innerHTML = results.entities.map(e => 
+                    `<span class="entity-tag ${colors[e.type] || 'bg-gray-100 text-gray-800'}"><span class="font-semibold">${e.text}</span><span class="text-xs opacity-70">${e.type}</span></span>`
+                ).join('');
+            } else {
+                entitiesEl.classList.add('hidden');
+            }
+
+            // Keywords
+            const keywordsEl = document.getElementById('keywordsResults');
+            if (results.keywords) {
+                keywordsEl.classList.remove('hidden');
+                document.getElementById('keywordsList').innerHTML = results.keywords.map(k => 
+                    `<span class="keyword-tag"><strong>${k.text}</strong> <span class="text-xs text-gray-500">${k.relevance}%</span></span>`
+                ).join('');
+            } else {
+                keywordsEl.classList.add('hidden');
+            }
+
+            // Language
+            const languageEl = document.getElementById('languageResults');
+            if (results.language) {
+                languageEl.classList.remove('hidden');
+                document.getElementById('languageFlag').textContent = results.language.flag;
+                document.getElementById('languageName').textContent = results.language.name;
+                document.getElementById('languageConfidence').textContent = results.language.confidence + '%';
+            } else {
+                languageEl.classList.add('hidden');
+            }
+
+            // Emotions
+            const emotionsEl = document.getElementById('emotionsResults');
+            if (results.emotions) {
+                emotionsEl.classList.remove('hidden');
+                const emotionColors = { joy: 'bg-yellow-500', sadness: 'bg-blue-500', anger: 'bg-red-500', fear: 'bg-purple-500', surprise: 'bg-orange-500', disgust: 'bg-green-600' };
+                const emotionEmojis = { joy: '😊', sadness: '😢', anger: '😠', fear: '😨', surprise: '😮', disgust: '🤢' };
+                document.getElementById('emotionsList').innerHTML = Object.entries(results.emotions).map(([emotion, value]) => 
+                    `<div class="flex items-center gap-3"><span class="w-24 text-sm capitalize">${emotionEmojis[emotion]} ${emotion}</span><div class="flex-1 confidence-bar"><div class="emotion-bar ${emotionColors[emotion]}" style="width:${Math.max(value, 5)}%">${value}%</div></div></div>`
+                ).join('');
+            } else {
+                emotionsEl.classList.add('hidden');
+            }
+
+            // Summary
+            const summaryEl = document.getElementById('summaryResults');
+            if (results.summary) {
+                summaryEl.classList.remove('hidden');
+                document.getElementById('summaryText').textContent = results.summary.summary;
+                document.getElementById('originalWords').textContent = results.summary.originalWords;
+                document.getElementById('summaryWords').textContent = results.summary.summaryWords;
+                const reduction = ((1 - results.summary.summaryWords / results.summary.originalWords) * 100).toFixed(0);
+                document.getElementById('reductionPercent').textContent = reduction + '%';
+            } else {
+                summaryEl.classList.add('hidden');
+            }
+
+            // Preview
+            document.getElementById('wordCount').textContent = text.split(/\s+/).length;
+            document.getElementById('documentPreview').innerHTML = highlightText(text.substring(0, 5000));
+        }
+
+        function saveAnalysis(source, text, results) {
+            const analysis = {
+                id: Date.now(),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                userEmail: currentUser.email,
+                source,
+                types: selectedAnalysisTypes.join(', '),
+                sentiment: results.sentiment ? results.sentiment.label : 'N/A',
+                wordCount: text.split(/\s+/).length,
+                date: new Date().toISOString()
+            };
+            const analyses = DB.getAnalyses();
+            analyses.push(analysis);
+            DB.saveAnalyses(analyses);
+            
+            // Refresh home data if on home page
+            if (!document.getElementById('homePage').classList.contains('hidden')) {
+                loadHomeData();
+            }
+        }
+
+        // ==================== BATCH ANALYSIS ====================
+        function handleBatchFiles(e) {
+            batchFiles = Array.from(e.target.files).slice(0, 10);
+            const list = document.getElementById('batchFilesList');
+            list.classList.remove('hidden');
+            list.innerHTML = batchFiles.map((f, i) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <span>${getFileIcon(f.name)}</span>
+                        <span class="text-sm font-medium">${f.name}</span>
+                        <span class="text-xs text-gray-500">${formatFileSize(f.size)}</span>
+                    </div>
+                    <span id="batch-status-${i}" class="text-xs text-gray-400">Pending</span>
+                </div>
+            `).join('');
+            document.getElementById('batchAnalyzeBtn').disabled = false;
+        }
+
+        async function runBatchAnalysis() {
+            const resultsContainer = document.getElementById('batchResults');
+            const resultsList = document.getElementById('batchResultsList');
+            resultsContainer.classList.remove('hidden');
+            resultsList.innerHTML = '';
+
+            for (let i = 0; i < batchFiles.length; i++) {
+                const statusEl = document.getElementById(`batch-status-${i}`);
+                statusEl.textContent = 'Processing...';
+                statusEl.className = 'text-xs text-blue-600';
+
+                try {
+                    const text = await extractText(batchFiles[i]);
+                    const sentiment = analyzeSentiment(text);
+                    
+                    statusEl.textContent = 'Done ✓';
+                    statusEl.className = 'text-xs text-green-600';
+
+                    resultsList.innerHTML += `
+                        <div class="p-4 bg-gray-50 rounded-lg flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span>${getFileIcon(batchFiles[i].name)}</span>
+                                <span class="font-medium">${batchFiles[i].name}</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm">${sentiment.label}</span>
+                                <span class="text-sm text-gray-500">Score: ${sentiment.score}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    saveAnalysis(batchFiles[i].name, text, { sentiment });
+                } catch (e) {
+                    statusEl.textContent = 'Error ✗';
+                    statusEl.className = 'text-xs text-red-600';
+                }
+            }
+        }
+
+        function getFileIcon(name) {
+            const ext = name.split('.').pop().toLowerCase();
+            if (ext === 'pdf') return '📕';
+            if (ext === 'docx') return '📘';
+            if (ext === 'xlsx' || ext === 'xls') return '📗';
+            if (ext === 'txt') return '📝';
+            if (ext === 'csv') return '📊';
+            return '📄';
+        }
+
+        // ==================== API PAGE ====================
+        function copyApiKey() {
+            navigator.clipboard.writeText(currentUser.apiKey);
+            alert('API Key copied!');
+        }
+
+        function regenerateApiKey() {
+            currentUser.apiKey = generateApiKey();
+            const users = DB.getUsers();
+            const idx = users.findIndex(u => u.id === currentUser.id);
+            if (idx > -1) {
+                users[idx].apiKey = currentUser.apiKey;
+                DB.saveUsers(users);
+            }
+            DB.setCurrentUser(currentUser);
+            document.getElementById('apiKey').textContent = currentUser.apiKey;
+        }
+
+        function showCodeExample(lang) {
+            const examples = {
+                python: `import requests
+
+response = requests.post(
+    "https://api.Document Analyzer.com/v1/analyze",
+    headers={
+        "Authorization": "Bearer YOUR_API_KEY",
+        "Content-Type": "application/json"
+    },
+    json={
+        "text": "Your text here...",
+        "analyses": ["sentiment", "entities"]
+    }
+)
+
+result = response.json()
+print(result)`,
+                javascript: `fetch('https://api.Document Analyzer.com/v1/analyze', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        text: 'Your text here...',
+        analyses: ['sentiment', 'entities']
+    })
+})
+.then(res => res.json())
+.then(data => console.log(data));`,
+                curl: `curl -X POST https://api.Document Analyzer.com/v1/analyze \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"text": "Your text here...", "analyses": ["sentiment", "entities"]}'`
+            };
+            document.getElementById('codeExample').innerHTML = `<code>${examples[lang]}</code>`;
+        }
+
+        // ==================== HISTORY ====================
+        function loadHistory() {
+            // Filter analyses to show only current user's data
+            const analyses = DB.getAnalyses().filter(a => a.userId === currentUser.id);
+            const container = document.getElementById('historyList');
+            
+            // Update subtitle with count
+            document.getElementById('historySubtitle').textContent = 
+                `Showing ${analyses.length} analysis record${analyses.length !== 1 ? 's' : ''} for ${currentUser.name}`;
+            
+            if (analyses.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No analysis history yet. Start analyzing to see your records here!</p>';
+                return;
+            }
+            container.innerHTML = analyses.reverse().map(a => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center gap-4">
+                        <span class="text-2xl">${getFileIcon(a.source)}</span>
+                        <div>
+                            <p class="font-medium text-gray-800">${a.source}</p>
+                            <p class="text-sm text-gray-500">${new Date(a.date).toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-6">
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">Types</p>
+                            <p class="text-sm font-medium">${a.types}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">Sentiment</p>
+                            <p class="font-bold">${a.sentiment}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">Words</p>
+                            <p class="font-bold text-gray-700">${a.wordCount}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function clearHistory() {
+            if (!confirm('Clear all history?')) return;
+            const analyses = DB.getAnalyses().filter(a => a.userId !== currentUser.id);
+            DB.saveAnalyses(analyses);
+            loadHistory();
+        }
+
+        // ==================== ADMIN ====================
+        function loadAdminData() {
+            if (!currentUser || !currentUser.isAdmin) return;
+            const users = DB.getUsers();
+            const analyses = DB.getAnalyses();
+            
+            // Calculate stats
+            const positive = analyses.filter(a => a.sentiment && a.sentiment.includes('Positive')).length;
+            const negative = analyses.filter(a => a.sentiment && a.sentiment.includes('Negative')).length;
+            
+            // Update stats
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('totalAnalyses').textContent = analyses.length;
+            document.getElementById('adminPositive').textContent = positive;
+            document.getElementById('adminNegative').textContent = negative;
+            
+            const tbody = document.getElementById('adminTableBody');
+            if (analyses.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No analyses yet. Users will appear here once they start analyzing.</td></tr>';
+                return;
+            }
+            
+            // Sort by date (newest first)
+            const sortedAnalyses = [...analyses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            tbody.innerHTML = sortedAnalyses.map(a => `
+                <tr class="border-t border-gray-100 hover:bg-gray-50">
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="text-blue-600 font-semibold text-xs">${a.userName ? a.userName.charAt(0) : '?'}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-800 text-sm">${a.userName || 'Unknown'}</p>
+                                <p class="text-xs text-gray-500">${a.userEmail || 'No email'}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">${getFileIcon(a.source)}</span>
+                            <span class="text-sm">${a.source}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3"><span class="text-xs bg-gray-100 px-2 py-1 rounded">${a.types}</span></td>
+                    <td class="px-4 py-3">
+                        <span class="text-sm font-medium px-2 py-1 rounded ${getSentimentClass(a.sentiment)}">${a.sentiment}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-600">${a.wordCount}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">${new Date(a.date).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function refreshAdminData() {
+            loadAdminData();
+            // Show brief notification
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✓ Refreshed!';
+            btn.classList.add('bg-green-100', 'text-green-700');
+            btn.classList.remove('bg-purple-100', 'text-purple-700');
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-green-100', 'text-green-700');
+                btn.classList.add('bg-purple-100', 'text-purple-700');
+            }, 1500);
+        }
+
+        // ==================== DRAG & DROP ====================
+        ['dropZone', 'batchDropZone'].forEach(id => {
+            const zone = document.getElementById(id);
+            if (!zone) return;
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('border-blue-500', 'bg-blue-50'); });
+            zone.addEventListener('dragleave', () => { zone.classList.remove('border-blue-500', 'bg-blue-50'); });
+            zone.addEventListener('drop', e => {
+                e.preventDefault();
+                zone.classList.remove('border-blue-500', 'bg-blue-50');
+                const input = zone.querySelector('input[type="file"]');
+                input.files = e.dataTransfer.files;
+                input.dispatchEvent(new Event('change'));
+            });
+        });
+    </script>
+</body>
+</html>
