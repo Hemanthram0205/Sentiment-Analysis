@@ -1,214 +1,308 @@
 """
 Document Analyzer - Advanced Text Analysis Platform
-Flask Backend with SQLAlchemy Database
+Streamlit Application
 
 To run this application:
-1. Install dependencies: pip install flask flask-sqlalchemy flask-cors werkzeug PyJWT textblob
-2. Run the app: python app.py
-3. Open http://localhost:5000 in your browser
+1. Install dependencies: pip install streamlit pandas PyPDF2 python-docx openpyxl mammoth
+2. Run the app: streamlit run app.py
+3. Open http://localhost:8501 in your browser
 
-Database: SQLite (Document Analyzer.db) - automatically created on first run
+Database: SQLite (document_analyzer.db) - automatically created on first run
 """
 
-from flask import Flask, request, jsonify, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
-import jwt
+import streamlit as st
+import sqlite3
+import hashlib
 import uuid
-import os
 import re
-from functools import wraps
+import json
+from datetime import datetime
+import io
+import base64
 
-# Initialize Flask app
-app = Flask(__name__, static_folder='.', static_url_path='')
-app.config['SECRET_KEY'] = 'your-secret-key-change-in-production-' + str(uuid.uuid4())
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Document Analyzer.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Page config
+st.set_page_config(
+    page_title="Document Analyzer - Advanced Text Analysis Platform",
+    page_icon="🔬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Initialize extensions
-db = SQLAlchemy(app)
-CORS(app)
-
-# ==================== DATABASE MODELS ====================
-
-class User(db.Model):
-    """User model for authentication and profile"""
-    __tablename__ = 'users'
+# Custom CSS to match original design
+st.markdown("""
+<style>
+    /* Import Inter font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)
-    api_key = db.Column(db.String(64), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    * {
+        font-family: 'Inter', sans-serif;
+    }
     
-    # Relationship to analyses
-    analyses = db.relationship('Analysis', backref='user', lazy=True, cascade='all, delete-orphan')
+    /* Main container styling */
+    .main {
+        background-color: #f9fafb;
+    }
     
-    def to_dict(self):
+    /* Card styling */
+    .card-shadow {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Stat card */
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    /* Highlight classes */
+    .highlight-positive {
+        background-color: #d4edda;
+        padding: 2px 4px;
+        border-radius: 4px;
+    }
+    
+    .highlight-negative {
+        background-color: #f8d7da;
+        padding: 2px 4px;
+        border-radius: 4px;
+    }
+    
+    .highlight-neutral {
+        background-color: #fff3cd;
+        padding: 2px 4px;
+        border-radius: 4px;
+    }
+    
+    /* Button styling */
+    .stButton>button {
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    /* Remove streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #f3f4f6;
+        border-radius: 0.5rem;
+        padding: 0.25rem;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        color: #2563eb;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ==================== DATABASE ====================
+
+def init_db():
+    """Initialize SQLite database"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
+    
+    # Users table
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT NOT NULL,
+                  email TEXT UNIQUE NOT NULL,
+                  password_hash TEXT NOT NULL,
+                  is_admin INTEGER DEFAULT 0,
+                  api_key TEXT UNIQUE NOT NULL,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    
+    # Analyses table
+    c.execute('''CREATE TABLE IF NOT EXISTS analyses
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  user_id INTEGER NOT NULL,
+                  source TEXT NOT NULL,
+                  text_preview TEXT,
+                  word_count INTEGER DEFAULT 0,
+                  analysis_types TEXT,
+                  sentiment_score REAL,
+                  sentiment_label TEXT,
+                  sentiment_positive REAL,
+                  sentiment_negative REAL,
+                  sentiment_neutral REAL,
+                  language_code TEXT,
+                  language_name TEXT,
+                  language_confidence REAL,
+                  emotions_json TEXT,
+                  entities_json TEXT,
+                  keywords_json TEXT,
+                  summary_text TEXT,
+                  summary_words INTEGER,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (user_id) REFERENCES users (id))''')
+    
+    # Create demo accounts if they don't exist
+    c.execute("SELECT COUNT(*) FROM users WHERE email='admin@demo.com'")
+    if c.fetchone()[0] == 0:
+        admin_api_key = 'admin-' + str(uuid.uuid4())
+        admin_pass = hashlib.sha256('admin123'.encode()).hexdigest()
+        c.execute("INSERT INTO users (name, email, password_hash, is_admin, api_key) VALUES (?, ?, ?, ?, ?)",
+                  ('Admin User', 'admin@demo.com', admin_pass, 1, admin_api_key))
+    
+    c.execute("SELECT COUNT(*) FROM users WHERE email='user@demo.com'")
+    if c.fetchone()[0] == 0:
+        user_api_key = 'user-' + str(uuid.uuid4())
+        user_pass = hashlib.sha256('user123'.encode()).hexdigest()
+        c.execute("INSERT INTO users (name, email, password_hash, is_admin, api_key) VALUES (?, ?, ?, ?, ?)",
+                  ('Regular User', 'user@demo.com', user_pass, 0, user_api_key))
+    
+    conn.commit()
+    conn.close()
+
+def get_user(email, password):
+    """Authenticate user"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    c.execute("SELECT * FROM users WHERE email=? AND password_hash=?", (email, password_hash))
+    user = c.fetchone()
+    conn.close()
+    if user:
         return {
-            'id': self.id,
-            'name': self.name,
-            'email': self.email,
-            'isAdmin': self.is_admin,
-            'apiKey': self.api_key,
-            'createdAt': self.created_at.isoformat()
+            'id': user[0],
+            'name': user[1],
+            'email': user[2],
+            'is_admin': bool(user[4]),
+            'api_key': user[5]
         }
-    
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-    
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    return None
 
+def create_user(name, email, password, is_admin=False):
+    """Create new user"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    api_key = str(uuid.uuid4())
+    try:
+        c.execute("INSERT INTO users (name, email, password_hash, is_admin, api_key) VALUES (?, ?, ?, ?, ?)",
+                  (name, email, password_hash, int(is_admin), api_key))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError:
+        conn.close()
+        return False
 
-class Analysis(db.Model):
-    """Analysis model for storing text analysis results"""
-    __tablename__ = 'analyses'
+def save_analysis(user_id, source, text, analysis_types, results):
+    """Save analysis to database"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
     
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    source = db.Column(db.String(255), nullable=False)  # filename or "Text Input"
-    text_preview = db.Column(db.Text)  # First 500 chars of analyzed text
-    word_count = db.Column(db.Integer, default=0)
+    sentiment = results.get('sentiment', {})
+    language = results.get('language', {})
     
-    # Analysis types performed
-    analysis_types = db.Column(db.String(255))  # comma-separated list
+    c.execute("""INSERT INTO analyses 
+                 (user_id, source, text_preview, word_count, analysis_types,
+                  sentiment_score, sentiment_label, sentiment_positive, sentiment_negative, sentiment_neutral,
+                  language_code, language_name, language_confidence,
+                  emotions_json, entities_json, keywords_json, summary_text, summary_words)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+              (user_id, source, text[:500], len(text.split()), ', '.join(analysis_types),
+               sentiment.get('score'), sentiment.get('label'), sentiment.get('positive'),
+               sentiment.get('negative'), sentiment.get('neutral'),
+               language.get('code'), language.get('name'), language.get('confidence'),
+               json.dumps(results.get('emotions', {})), json.dumps(results.get('entities', [])),
+               json.dumps(results.get('keywords', [])), 
+               results.get('summary', {}).get('summary'),
+               results.get('summary', {}).get('summaryWords')))
     
-    # Sentiment results
-    sentiment_score = db.Column(db.Float)
-    sentiment_label = db.Column(db.String(50))
-    sentiment_positive = db.Column(db.Float)
-    sentiment_negative = db.Column(db.Float)
-    sentiment_neutral = db.Column(db.Float)
-    
-    # Language detection
-    language_code = db.Column(db.String(10))
-    language_name = db.Column(db.String(50))
-    language_confidence = db.Column(db.Float)
-    
-    # Emotions (stored as JSON string)
-    emotions_json = db.Column(db.Text)
-    
-    # Entities (stored as JSON string)
-    entities_json = db.Column(db.Text)
-    
-    # Keywords (stored as JSON string)
-    keywords_json = db.Column(db.Text)
-    
-    # Summary
-    summary_text = db.Column(db.Text)
-    summary_words = db.Column(db.Integer)
-    
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'userId': self.user_id,
-            'userName': self.user.name if self.user else 'Unknown',
-            'userEmail': self.user.email if self.user else 'Unknown',
-            'source': self.source,
-            'textPreview': self.text_preview,
-            'wordCount': self.word_count,
-            'types': self.analysis_types,
-            'sentiment': self.sentiment_label,
-            'sentimentScore': self.sentiment_score,
-            'sentimentPositive': self.sentiment_positive,
-            'sentimentNegative': self.sentiment_negative,
-            'sentimentNeutral': self.sentiment_neutral,
-            'languageCode': self.language_code,
-            'languageName': self.language_name,
-            'languageConfidence': self.language_confidence,
-            'emotions': self.emotions_json,
-            'entities': self.entities_json,
-            'keywords': self.keywords_json,
-            'summary': self.summary_text,
-            'summaryWords': self.summary_words,
-            'date': self.created_at.isoformat()
-        }
+    conn.commit()
+    conn.close()
 
+def get_user_analyses(user_id):
+    """Get all analyses for a user"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM analyses WHERE user_id=? ORDER BY created_at DESC", (user_id,))
+    analyses = c.fetchall()
+    conn.close()
+    return analyses
 
-# ==================== HELPER FUNCTIONS ====================
+def get_all_analyses():
+    """Get all analyses (admin only)"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
+    c.execute("""SELECT a.*, u.name, u.email FROM analyses a 
+                 JOIN users u ON a.user_id = u.id 
+                 ORDER BY a.created_at DESC""")
+    analyses = c.fetchall()
+    conn.close()
+    return analyses
 
-def generate_api_key():
-    """Generate a unique API key"""
-    return str(uuid.uuid4())
+def get_user_stats(user_id):
+    """Get statistics for user"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM analyses WHERE user_id=?", (user_id,))
+    total = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM analyses WHERE user_id=? AND sentiment_label LIKE '%Positive%'", (user_id,))
+    positive = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM analyses WHERE user_id=? AND sentiment_label LIKE '%Negative%'", (user_id,))
+    negative = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM analyses WHERE user_id=? AND sentiment_label LIKE '%Neutral%'", (user_id,))
+    neutral = c.fetchone()[0]
+    conn.close()
+    return {'total': total, 'positive': positive, 'negative': negative, 'neutral': neutral}
 
+def get_admin_stats():
+    """Get admin statistics"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM users")
+    total_users = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM analyses")
+    total_analyses = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM analyses WHERE sentiment_label LIKE '%Positive%'")
+    positive = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM analyses WHERE sentiment_label LIKE '%Negative%'")
+    negative = c.fetchone()[0]
+    conn.close()
+    return {'totalUsers': total_users, 'totalAnalyses': total_analyses, 
+            'positive': positive, 'negative': negative}
 
-def token_required(f):
-    """Decorator to require valid JWT token"""
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = None
-        
-        # Get token from header
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            if auth_header.startswith('Bearer '):
-                token = auth_header[7:]
-        
-        if not token:
-            return jsonify({'success': False, 'message': 'Token is missing'}), 401
-        
-        try:
-            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-            current_user = User.query.get(data['user_id'])
-            if not current_user:
-                return jsonify({'success': False, 'message': 'User not found'}), 401
-        except jwt.ExpiredSignatureError:
-            return jsonify({'success': False, 'message': 'Token has expired'}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({'success': False, 'message': 'Invalid token'}), 401
-        
-        return f(current_user, *args, **kwargs)
-    
-    return decorated
+def clear_user_analyses(user_id):
+    """Clear all analyses for a user"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM analyses WHERE user_id=?", (user_id,))
+    conn.commit()
+    conn.close()
 
-
-def api_key_required(f):
-    """Decorator to require valid API key"""
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        api_key = None
-        
-        # Get API key from header
-        if 'X-API-Key' in request.headers:
-            api_key = request.headers['X-API-Key']
-        elif 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            if auth_header.startswith('Bearer '):
-                api_key = auth_header[7:]
-        
-        if not api_key:
-            return jsonify({'success': False, 'message': 'API key is missing'}), 401
-        
-        user = User.query.filter_by(api_key=api_key).first()
-        if not user:
-            return jsonify({'success': False, 'message': 'Invalid API key'}), 401
-        
-        return f(user, *args, **kwargs)
-    
-    return decorated
-
-
-def admin_required(f):
-    """Decorator to require admin privileges"""
-    @wraps(f)
-    def decorated(current_user, *args, **kwargs):
-        if not current_user.is_admin:
-            return jsonify({'success': False, 'message': 'Admin access required'}), 403
-        return f(current_user, *args, **kwargs)
-    
-    return decorated
-
+def regenerate_api_key(user_id):
+    """Regenerate API key for user"""
+    conn = sqlite3.connect('document_analyzer.db')
+    c = conn.cursor()
+    new_key = str(uuid.uuid4())
+    c.execute("UPDATE users SET api_key=? WHERE id=?", (new_key, user_id))
+    conn.commit()
+    conn.close()
+    return new_key
 
 # ==================== TEXT ANALYSIS FUNCTIONS ====================
 
-# Word lists for sentiment analysis
 POSITIVE_WORDS = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'awesome', 
                   'love', 'happy', 'joy', 'beautiful', 'best', 'perfect', 'brilliant', 'outstanding',
                   'superb', 'terrific', 'delightful', 'pleasant', 'positive', 'success', 'successful',
@@ -241,14 +335,13 @@ EMOTION_WORDS = {
 }
 
 LANGUAGE_PATTERNS = {
-    'en': {'name': 'English', 'words': ['the', 'is', 'are', 'was', 'were', 'have', 'has', 'been', 'being', 'and', 'or', 'but', 'with', 'for', 'that', 'this']},
-    'es': {'name': 'Spanish', 'words': ['el', 'la', 'los', 'las', 'de', 'en', 'que', 'es', 'por', 'con', 'para', 'como', 'pero', 'más', 'este', 'esta']},
-    'fr': {'name': 'French', 'words': ['le', 'la', 'les', 'de', 'du', 'des', 'et', 'est', 'que', 'qui', 'dans', 'pour', 'pas', 'sur', 'avec', 'plus']},
-    'de': {'name': 'German', 'words': ['der', 'die', 'das', 'und', 'ist', 'von', 'mit', 'für', 'auf', 'nicht', 'auch', 'als', 'eine', 'aber', 'oder']},
-    'it': {'name': 'Italian', 'words': ['il', 'la', 'di', 'che', 'non', 'per', 'una', 'sono', 'con', 'come', 'anche', 'più', 'del', 'della']},
-    'pt': {'name': 'Portuguese', 'words': ['o', 'a', 'os', 'as', 'de', 'que', 'em', 'para', 'com', 'não', 'uma', 'por', 'mais', 'como']},
+    'en': {'name': 'English', 'flag': '🇬🇧', 'words': ['the', 'is', 'are', 'was', 'were', 'have', 'has', 'been', 'being', 'and', 'or', 'but', 'with', 'for', 'that', 'this']},
+    'es': {'name': 'Spanish', 'flag': '🇪🇸', 'words': ['el', 'la', 'los', 'las', 'de', 'en', 'que', 'es', 'por', 'con', 'para', 'como', 'pero', 'más', 'este', 'esta']},
+    'fr': {'name': 'French', 'flag': '🇫🇷', 'words': ['le', 'la', 'les', 'de', 'du', 'des', 'et', 'est', 'que', 'qui', 'dans', 'pour', 'pas', 'sur', 'avec', 'plus']},
+    'de': {'name': 'German', 'flag': '🇩🇪', 'words': ['der', 'die', 'das', 'und', 'ist', 'von', 'mit', 'für', 'auf', 'nicht', 'auch', 'als', 'eine', 'aber', 'oder']},
+    'it': {'name': 'Italian', 'flag': '🇮🇹', 'words': ['il', 'la', 'di', 'che', 'non', 'per', 'una', 'sono', 'con', 'come', 'anche', 'più', 'del', 'della']},
+    'pt': {'name': 'Portuguese', 'flag': '🇵🇹', 'words': ['o', 'a', 'os', 'as', 'de', 'que', 'em', 'para', 'com', 'não', 'uma', 'por', 'mais', 'como']},
 }
-
 
 def analyze_sentiment(text):
     """Analyze sentiment of text"""
@@ -282,7 +375,6 @@ def analyze_sentiment(text):
         'neutral': round(neutral * 100, 0)
     }
 
-
 def extract_entities(text):
     """Extract named entities from text"""
     entities = []
@@ -290,7 +382,7 @@ def extract_entities(text):
     # Person names (two capitalized words)
     persons = re.findall(r'\b[A-Z][a-z]+ [A-Z][a-z]+\b', text)
     for p in persons[:5]:
-        entities.append({'text': p, 'type': 'PERSON', 'confidence': round(0.7 + 0.25 * uuid.uuid4().int % 100 / 100, 2)})
+        entities.append({'text': p, 'type': 'PERSON', 'confidence': round(0.7 + 0.25 * (uuid.uuid4().int % 100) / 100, 2)})
     
     # Organizations
     orgs = ['Google', 'Microsoft', 'Apple', 'Amazon', 'Facebook', 'Meta', 'Tesla', 'IBM', 
@@ -319,7 +411,6 @@ def extract_entities(text):
     
     return entities[:20]
 
-
 def extract_keywords(text):
     """Extract keywords from text"""
     words = re.findall(r'\b[a-z]{4,}\b', text.lower())
@@ -341,24 +432,22 @@ def extract_keywords(text):
     return [{'text': word, 'relevance': round(count / total_words * 100, 1)} 
             for word, count in sorted_words]
 
-
 def detect_language(text):
     """Detect language of text"""
     words = text.lower().split()
     
     max_score = 0
-    detected = {'code': 'en', 'name': 'English'}
+    detected = {'code': 'en', 'name': 'English', 'flag': '🇬🇧'}
     
     for code, lang in LANGUAGE_PATTERNS.items():
         score = sum(1 for w in lang['words'] if w in words)
         if score > max_score:
             max_score = score
-            detected = {'code': code, 'name': lang['name']}
+            detected = {'code': code, 'name': lang['name'], 'flag': lang['flag']}
     
     confidence = min(95, 60 + max_score * 5)
     
     return {**detected, 'confidence': confidence}
-
 
 def analyze_emotions(text):
     """Analyze emotions in text"""
@@ -377,7 +466,6 @@ def analyze_emotions(text):
     return {emotion: round((count / total) * 100, 0) 
             for emotion, count in emotions.items()}
 
-
 def summarize_text(text):
     """Generate a summary of text"""
     sentences = re.findall(r'[^.!?]+[.!?]+', text) or [text]
@@ -391,387 +479,586 @@ def summarize_text(text):
         'summaryWords': len(summary.split())
     }
 
-
-# ==================== ROUTES ====================
-
-# Serve the frontend
-@app.route('/')
-def serve_frontend():
-    return send_from_directory('.', 'index.html')
-
-
-# ==================== AUTH ROUTES ====================
-
-@app.route('/api/auth/register', methods=['POST'])
-def register():
-    """Register a new user"""
-    data = request.get_json()
-    
-    # Validate input
-    if not data.get('name') or not data.get('email') or not data.get('password'):
-        return jsonify({'success': False, 'message': 'Name, email and password are required'}), 400
-    
-    if len(data['password']) < 6:
-        return jsonify({'success': False, 'message': 'Password must be at least 6 characters'}), 400
-    
-    # Check if email already exists
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({'success': False, 'message': 'Email already registered'}), 400
-    
-    # Create new user
-    user = User(
-        name=data['name'],
-        email=data['email'],
-        is_admin=data.get('isAdmin', False),
-        api_key=generate_api_key()
-    )
-    user.set_password(data['password'])
-    
-    db.session.add(user)
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'message': 'Account created successfully',
-        'user': user.to_dict()
-    })
-
-
-@app.route('/api/auth/login', methods=['POST'])
-def login():
-    """Login user and return JWT token"""
-    data = request.get_json()
-    
-    if not data.get('email') or not data.get('password'):
-        return jsonify({'success': False, 'message': 'Email and password are required'}), 400
-    
-    user = User.query.filter_by(email=data['email']).first()
-    
-    if not user or not user.check_password(data['password']):
-        return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
-    
-    # Generate JWT token
-    token = jwt.encode({
-        'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(days=7)
-    }, app.config['SECRET_KEY'], algorithm='HS256')
-    
-    return jsonify({
-        'success': True,
-        'message': 'Login successful',
-        'token': token,
-        'user': user.to_dict()
-    })
-
-
-@app.route('/api/auth/me', methods=['GET'])
-@token_required
-def get_current_user(current_user):
-    """Get current logged in user"""
-    return jsonify({
-        'success': True,
-        'user': current_user.to_dict()
-    })
-
-
-@app.route('/api/auth/regenerate-api-key', methods=['POST'])
-@token_required
-def regenerate_api_key(current_user):
-    """Regenerate user's API key"""
-    current_user.api_key = generate_api_key()
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'apiKey': current_user.api_key
-    })
-
-
-# ==================== ANALYSIS ROUTES ====================
-
-@app.route('/api/analyze', methods=['POST'])
-@token_required
-def analyze_text(current_user):
-    """Analyze text and save results"""
-    data = request.get_json()
-    
-    if not data.get('text'):
-        return jsonify({'success': False, 'message': 'Text is required'}), 400
-    
-    text = data['text']
-    source = data.get('source', 'Text Input')
-    analysis_types = data.get('types', ['sentiment'])
-    
-    results = {}
-    
-    # Perform requested analyses
-    if 'sentiment' in analysis_types:
-        results['sentiment'] = analyze_sentiment(text)
-    
-    if 'entities' in analysis_types:
-        results['entities'] = extract_entities(text)
-    
-    if 'keywords' in analysis_types:
-        results['keywords'] = extract_keywords(text)
-    
-    if 'language' in analysis_types:
-        results['language'] = detect_language(text)
-    
-    if 'emotions' in analysis_types:
-        results['emotions'] = analyze_emotions(text)
-    
-    if 'summary' in analysis_types:
-        results['summary'] = summarize_text(text)
-    
-    # Save analysis to database
-    analysis = Analysis(
-        user_id=current_user.id,
-        source=source,
-        text_preview=text[:500],
-        word_count=len(text.split()),
-        analysis_types=', '.join(analysis_types),
-        sentiment_score=results.get('sentiment', {}).get('score'),
-        sentiment_label=results.get('sentiment', {}).get('label'),
-        sentiment_positive=results.get('sentiment', {}).get('positive'),
-        sentiment_negative=results.get('sentiment', {}).get('negative'),
-        sentiment_neutral=results.get('sentiment', {}).get('neutral'),
-        language_code=results.get('language', {}).get('code'),
-        language_name=results.get('language', {}).get('name'),
-        language_confidence=results.get('language', {}).get('confidence'),
-        emotions_json=str(results.get('emotions', {})),
-        entities_json=str(results.get('entities', [])),
-        keywords_json=str(results.get('keywords', [])),
-        summary_text=results.get('summary', {}).get('summary'),
-        summary_words=results.get('summary', {}).get('summaryWords')
-    )
-    
-    db.session.add(analysis)
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'results': results,
-        'analysis': analysis.to_dict()
-    })
-
-
-@app.route('/api/analyses', methods=['GET'])
-@token_required
-def get_user_analyses(current_user):
-    """Get all analyses for current user"""
-    analyses = Analysis.query.filter_by(user_id=current_user.id)\
-        .order_by(Analysis.created_at.desc()).all()
-    
-    return jsonify({
-        'success': True,
-        'analyses': [a.to_dict() for a in analyses]
-    })
-
-
-@app.route('/api/analyses/stats', methods=['GET'])
-@token_required
-def get_user_stats(current_user):
-    """Get analysis statistics for current user"""
-    analyses = Analysis.query.filter_by(user_id=current_user.id).all()
-    
-    total = len(analyses)
-    positive = sum(1 for a in analyses if a.sentiment_label and 'Positive' in a.sentiment_label)
-    negative = sum(1 for a in analyses if a.sentiment_label and 'Negative' in a.sentiment_label)
-    neutral = sum(1 for a in analyses if a.sentiment_label and 'Neutral' in a.sentiment_label)
-    
-    return jsonify({
-        'success': True,
-        'stats': {
-            'total': total,
-            'positive': positive,
-            'negative': negative,
-            'neutral': neutral
-        }
-    })
-
-
-@app.route('/api/analyses/<int:analysis_id>', methods=['DELETE'])
-@token_required
-def delete_analysis(current_user, analysis_id):
-    """Delete a specific analysis"""
-    analysis = Analysis.query.filter_by(id=analysis_id, user_id=current_user.id).first()
-    
-    if not analysis:
-        return jsonify({'success': False, 'message': 'Analysis not found'}), 404
-    
-    db.session.delete(analysis)
-    db.session.commit()
-    
-    return jsonify({'success': True, 'message': 'Analysis deleted'})
-
-
-@app.route('/api/analyses/clear', methods=['DELETE'])
-@token_required
-def clear_user_analyses(current_user):
-    """Clear all analyses for current user"""
-    Analysis.query.filter_by(user_id=current_user.id).delete()
-    db.session.commit()
-    
-    return jsonify({'success': True, 'message': 'All analyses cleared'})
-
-
-# ==================== ADMIN ROUTES ====================
-
-@app.route('/api/admin/stats', methods=['GET'])
-@token_required
-@admin_required
-def get_admin_stats(current_user):
-    """Get admin dashboard statistics"""
-    total_users = User.query.count()
-    total_analyses = Analysis.query.count()
-    
-    analyses = Analysis.query.all()
-    positive = sum(1 for a in analyses if a.sentiment_label and 'Positive' in a.sentiment_label)
-    negative = sum(1 for a in analyses if a.sentiment_label and 'Negative' in a.sentiment_label)
-    
-    return jsonify({
-        'success': True,
-        'stats': {
-            'totalUsers': total_users,
-            'totalAnalyses': total_analyses,
-            'positive': positive,
-            'negative': negative
-        }
-    })
-
-
-@app.route('/api/admin/analyses', methods=['GET'])
-@token_required
-@admin_required
-def get_all_analyses(current_user):
-    """Get all analyses (admin only)"""
-    analyses = Analysis.query.order_by(Analysis.created_at.desc()).all()
-    
-    return jsonify({
-        'success': True,
-        'analyses': [a.to_dict() for a in analyses]
-    })
-
-
-@app.route('/api/admin/users', methods=['GET'])
-@token_required
-@admin_required
-def get_all_users(current_user):
-    """Get all users (admin only)"""
-    users = User.query.order_by(User.created_at.desc()).all()
-    
-    return jsonify({
-        'success': True,
-        'users': [u.to_dict() for u in users]
-    })
-
-
-# ==================== PUBLIC API ROUTES ====================
-
-@app.route('/api/v1/analyze', methods=['POST'])
-@api_key_required
-def public_api_analyze(user):
-    """Public API endpoint for text analysis"""
-    data = request.get_json()
-    
-    if not data.get('text'):
-        return jsonify({'success': False, 'error': 'Text is required'}), 400
-    
-    text = data['text']
-    analyses = data.get('analyses', ['sentiment'])
-    
-    results = {}
-    
-    if 'sentiment' in analyses:
-        results['sentiment'] = analyze_sentiment(text)
-    
-    if 'entities' in analyses:
-        results['entities'] = extract_entities(text)
-    
-    if 'keywords' in analyses:
-        results['keywords'] = extract_keywords(text)
-    
-    if 'language' in analyses:
-        results['language'] = detect_language(text)
-    
-    if 'emotions' in analyses:
-        results['emotions'] = analyze_emotions(text)
-    
-    if 'summary' in analyses:
-        results['summary'] = summarize_text(text)
-    
-    # Save to database
-    analysis = Analysis(
-        user_id=user.id,
-        source='API Request',
-        text_preview=text[:500],
-        word_count=len(text.split()),
-        analysis_types=', '.join(analyses),
-        sentiment_score=results.get('sentiment', {}).get('score'),
-        sentiment_label=results.get('sentiment', {}).get('label'),
-        sentiment_positive=results.get('sentiment', {}).get('positive'),
-        sentiment_negative=results.get('sentiment', {}).get('negative'),
-        sentiment_neutral=results.get('sentiment', {}).get('neutral'),
-        language_code=results.get('language', {}).get('code'),
-        language_name=results.get('language', {}).get('name'),
-        language_confidence=results.get('language', {}).get('confidence'),
-        emotions_json=str(results.get('emotions', {})),
-        entities_json=str(results.get('entities', [])),
-        keywords_json=str(results.get('keywords', [])),
-        summary_text=results.get('summary', {}).get('summary'),
-        summary_words=results.get('summary', {}).get('summaryWords')
-    )
-    
-    db.session.add(analysis)
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'data': results
-    })
-
-
-# ==================== DATABASE INITIALIZATION ====================
-
-def init_db():
-    """Initialize database and create demo accounts"""
-    with app.app_context():
-        db.create_all()
+def extract_text_from_file(uploaded_file):
+    """Extract text from uploaded file"""
+    try:
+        file_type = uploaded_file.name.split('.')[-1].lower()
         
-        # Create demo accounts if they don't exist
-        if not User.query.filter_by(email='admin@demo.com').first():
-            admin = User(
-                name='Admin User',
-                email='admin@demo.com',
-                is_admin=True,
-                api_key='admin-' + generate_api_key()
-            )
-            admin.set_password('admin123')
-            db.session.add(admin)
-        
-        if not User.query.filter_by(email='user@demo.com').first():
-            user = User(
-                name='Regular User',
-                email='user@demo.com',
-                is_admin=False,
-                api_key='user-' + generate_api_key()
-            )
-            user.set_password('user123')
-            db.session.add(user)
-        
-        db.session.commit()
-        print("Database initialized with demo accounts!")
-        print("Admin: admin@demo.com / admin123")
-        print("User: user@demo.com / user123")
+        if file_type == 'txt':
+            return uploaded_file.read().decode('utf-8')
+        elif file_type == 'pdf':
+            try:
+                import PyPDF2
+                pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                text = ''
+                for page in pdf_reader.pages:
+                    text += page.extract_text()
+                return text
+            except:
+                return "Error: Could not extract text from PDF"
+        elif file_type == 'docx':
+            try:
+                import docx
+                doc = docx.Document(uploaded_file)
+                return '\n'.join([para.text for para in doc.paragraphs])
+            except:
+                return "Error: Could not extract text from DOCX"
+        elif file_type in ['xlsx', 'xls']:
+            try:
+                import pandas as pd
+                df = pd.read_excel(uploaded_file)
+                return df.to_string()
+            except:
+                return "Error: Could not extract text from Excel file"
+        elif file_type == 'csv':
+            try:
+                import pandas as pd
+                df = pd.read_csv(uploaded_file)
+                return df.to_string()
+            except:
+                return "Error: Could not extract text from CSV"
+        else:
+            return "Unsupported file type"
+    except Exception as e:
+        return f"Error reading file: {str(e)}"
 
+def get_file_icon(filename):
+    """Get emoji icon for file type"""
+    ext = filename.split('.')[-1].lower()
+    icons = {
+        'pdf': '📕',
+        'docx': '📘',
+        'xlsx': '📗',
+        'xls': '📗',
+        'txt': '📄',
+        'csv': '📊'
+    }
+    return icons.get(ext, '📄')
+
+# ==================== INITIALIZE ====================
+
+# Initialize database
+init_db()
+
+# Initialize session state
+if 'user' not in st.session_state:
+    st.session_state.user = None
+if 'page' not in st.session_state:
+    st.session_state.page = 'login'
+
+# ==================== LOGIN PAGE ====================
+
+def show_login_page():
+    st.markdown("<div style='text-align: center; padding: 2rem;'>", unsafe_allow_html=True)
+    st.markdown("<h1 style='font-size: 3rem;'>🔬</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color: #1e293b;'>Document Analyzer</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #64748b;'>Advanced Text Analysis Platform</p>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"])
+    
+    with tab1:
+        with st.form("login_form"):
+            email = st.text_input("Email", placeholder="Enter your email")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
+            submitted = st.form_submit_button("Sign In", use_container_width=True)
+            
+            if submitted:
+                user = get_user(email, password)
+                if user:
+                    st.session_state.user = user
+                    st.session_state.page = 'home'
+                    st.rerun()
+                else:
+                    st.error("Invalid email or password")
+        
+        st.info("**Demo Credentials:**\n\nAdmin: admin@demo.com / admin123\n\nUser: user@demo.com / user123")
+    
+    with tab2:
+        with st.form("register_form"):
+            name = st.text_input("Full Name", placeholder="Enter your name")
+            email = st.text_input("Email", placeholder="Enter your email")
+            password = st.text_input("Password", type="password", placeholder="Min 6 characters")
+            is_admin = st.checkbox("Register as Admin")
+            submitted = st.form_submit_button("Create Account", use_container_width=True)
+            
+            if submitted:
+                if len(password) < 6:
+                    st.error("Password must be at least 6 characters")
+                elif create_user(name, email, password, is_admin):
+                    st.success("Account created! Please login.")
+                else:
+                    st.error("Email already registered")
+
+# ==================== MAIN APP ====================
+
+def show_main_app():
+    # Sidebar navigation
+    with st.sidebar:
+        st.markdown(f"### 👤 {st.session_state.user['name']}")
+        st.markdown(f"**{st.session_state.user['email']}**")
+        st.markdown("---")
+        
+        menu_items = [
+            ("🏠 Home", "home"),
+            ("🧠 Analyze", "analyze"),
+            ("📦 Batch", "batch"),
+            ("🔌 API", "api"),
+            ("📜 History", "history")
+        ]
+        
+        if st.session_state.user['is_admin']:
+            menu_items.append(("👑 Admin", "admin"))
+        
+        for label, page in menu_items:
+            if st.button(label, use_container_width=True, key=f"nav_{page}"):
+                st.session_state.page = page
+                st.rerun()
+        
+        st.markdown("---")
+        if st.button("🚪 Logout", use_container_width=True):
+            st.session_state.user = None
+            st.session_state.page = 'login'
+            st.rerun()
+    
+    # Main content
+    if st.session_state.page == 'home':
+        show_home_page()
+    elif st.session_state.page == 'analyze':
+        show_analyze_page()
+    elif st.session_state.page == 'batch':
+        show_batch_page()
+    elif st.session_state.page == 'api':
+        show_api_page()
+    elif st.session_state.page == 'history':
+        show_history_page()
+    elif st.session_state.page == 'admin' and st.session_state.user['is_admin']:
+        show_admin_page()
+
+# ==================== HOME PAGE ====================
+
+def show_home_page():
+    st.markdown(f"# Welcome back, {st.session_state.user['name'].split()[0]}! 👋")
+    st.markdown("Here's your analysis dashboard overview")
+    
+    # Stats
+    stats = get_user_stats(st.session_state.user['id'])
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("📊 My Analyses", stats['total'])
+    with col2:
+        st.metric("😊 Positive", stats['positive'])
+    with col3:
+        st.metric("😔 Negative", stats['negative'])
+    with col4:
+        st.metric("😐 Neutral", stats['neutral'])
+    
+    # Recent analyses
+    st.markdown("---")
+    st.markdown("### 📋 Recent Analyses")
+    analyses = get_user_analyses(st.session_state.user['id'])[:5]
+    
+    if not analyses:
+        st.info("No analyses yet. Start by analyzing some text!")
+    else:
+        for analysis in analyses:
+            with st.container():
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.markdown(f"**{get_file_icon(analysis[2])} {analysis[2]}**")
+                    st.caption(datetime.fromisoformat(analysis[18]).strftime('%Y-%m-%d %H:%M:%S'))
+                with col2:
+                    sentiment_class = ""
+                    if analysis[7] and 'Positive' in analysis[7]:
+                        sentiment_class = "🟢"
+                    elif analysis[7] and 'Negative' in analysis[7]:
+                        sentiment_class = "🔴"
+                    else:
+                        sentiment_class = "🟡"
+                    st.markdown(f"{sentiment_class} {analysis[7] or 'N/A'}")
+                st.divider()
+
+# ==================== ANALYZE PAGE ====================
+
+def show_analyze_page():
+    st.markdown("# 🧠 Text Analysis")
+    
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.markdown("### Input")
+        input_type = st.radio("", ["📝 Enter Text", "📁 Upload File"], horizontal=True, label_visibility="collapsed")
+        
+        text = ""
+        source = "Text Input"
+        
+        if input_type == "📝 Enter Text":
+            text = st.text_area("Enter or paste your text here", height=300, 
+                               placeholder="Enter or paste your text here for analysis...")
+        else:
+            uploaded_file = st.file_uploader("Upload a file", 
+                                            type=['pdf', 'docx', 'xlsx', 'xls', 'txt', 'csv'])
+            if uploaded_file:
+                source = uploaded_file.name
+                with st.spinner("Extracting text from file..."):
+                    text = extract_text_from_file(uploaded_file)
+                    if text:
+                        st.success(f"✓ Extracted {len(text.split())} words")
+                        with st.expander("Preview extracted text"):
+                            st.text(text[:500] + "..." if len(text) > 500 else text)
+        
+        st.markdown("### Select Analysis Types")
+        sentiment = st.checkbox("😊 Sentiment Analysis", value=True)
+        entities = st.checkbox("🏷️ Named Entities")
+        keywords = st.checkbox("🔑 Keywords")
+        language = st.checkbox("🌍 Language Detection")
+        emotions = st.checkbox("❤️ Emotion Detection")
+        summary = st.checkbox("📄 Summarization")
+        
+        if st.button("🔬 Run Analysis", use_container_width=True, type="primary"):
+            if not text.strip():
+                st.error("Please enter text or upload a file")
+            else:
+                analysis_types = []
+                if sentiment: analysis_types.append('sentiment')
+                if entities: analysis_types.append('entities')
+                if keywords: analysis_types.append('keywords')
+                if language: analysis_types.append('language')
+                if emotions: analysis_types.append('emotions')
+                if summary: analysis_types.append('summary')
+                
+                if not analysis_types:
+                    st.error("Please select at least one analysis type")
+                else:
+                    with st.spinner("Analyzing text..."):
+                        results = {}
+                        
+                        if 'sentiment' in analysis_types:
+                            results['sentiment'] = analyze_sentiment(text)
+                        if 'entities' in analysis_types:
+                            results['entities'] = extract_entities(text)
+                        if 'keywords' in analysis_types:
+                            results['keywords'] = extract_keywords(text)
+                        if 'language' in analysis_types:
+                            results['language'] = detect_language(text)
+                        if 'emotions' in analysis_types:
+                            results['emotions'] = analyze_emotions(text)
+                        if 'summary' in analysis_types:
+                            results['summary'] = summarize_text(text)
+                        
+                        # Save to database
+                        save_analysis(st.session_state.user['id'], source, text, analysis_types, results)
+                        
+                        # Store results in session state
+                        st.session_state.analysis_results = results
+                        st.session_state.analysis_text = text
+                        st.success("✓ Analysis complete!")
+                        st.rerun()
+    
+    with col2:
+        st.markdown("### Results")
+        
+        if 'analysis_results' not in st.session_state:
+            st.info("Run an analysis to see results here")
+        else:
+            results = st.session_state.analysis_results
+            text = st.session_state.analysis_text
+            
+            # Sentiment
+            if 'sentiment' in results:
+                with st.expander("😊 Sentiment Analysis", expanded=True):
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Score", results['sentiment']['score'])
+                    with col2:
+                        st.metric("Sentiment", results['sentiment']['label'])
+                    with col3:
+                        st.metric("Confidence", f"{results['sentiment']['confidence']}%")
+                    
+                    st.progress(int(results['sentiment']['positive']) / 100, text=f"Positive: {results['sentiment']['positive']}%")
+                    st.progress(int(results['sentiment']['negative']) / 100, text=f"Negative: {results['sentiment']['negative']}%")
+                    st.progress(int(results['sentiment']['neutral']) / 100, text=f"Neutral: {results['sentiment']['neutral']}%")
+            
+            # Entities
+            if 'entities' in results and results['entities']:
+                with st.expander("🏷️ Named Entities", expanded=True):
+                    entity_colors = {
+                        'PERSON': '🔵',
+                        'ORGANIZATION': '🟣',
+                        'LOCATION': '🟢',
+                        'DATE': '🟡',
+                        'EMAIL': '🔴',
+                        'URL': '🟠'
+                    }
+                    for entity in results['entities']:
+                        icon = entity_colors.get(entity['type'], '⚪')
+                        st.markdown(f"{icon} **{entity['text']}** ({entity['type']}) - {entity['confidence']}")
+            
+            # Keywords
+            if 'keywords' in results and results['keywords']:
+                with st.expander("🔑 Keywords", expanded=True):
+                    for kw in results['keywords']:
+                        st.markdown(f"**{kw['text']}** - {kw['relevance']}%")
+            
+            # Language
+            if 'language' in results:
+                with st.expander("🌍 Language Detection", expanded=True):
+                    st.markdown(f"## {results['language']['flag']} {results['language']['name']}")
+                    st.markdown(f"Confidence: **{results['language']['confidence']}%**")
+            
+            # Emotions
+            if 'emotions' in results:
+                with st.expander("❤️ Emotion Analysis", expanded=True):
+                    emotion_emojis = {
+                        'joy': '😊',
+                        'sadness': '😢',
+                        'anger': '😠',
+                        'fear': '😨',
+                        'surprise': '😮',
+                        'disgust': '🤢'
+                    }
+                    for emotion, value in results['emotions'].items():
+                        st.progress(int(value) / 100, text=f"{emotion_emojis.get(emotion, '😐')} {emotion.title()}: {value}%")
+            
+            # Summary
+            if 'summary' in results:
+                with st.expander("📄 Summary", expanded=True):
+                    st.info(results['summary']['summary'])
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Original", f"{results['summary']['originalWords']} words")
+                    with col2:
+                        st.metric("Summary", f"{results['summary']['summaryWords']} words")
+                    with col3:
+                        reduction = int((1 - results['summary']['summaryWords'] / results['summary']['originalWords']) * 100)
+                        st.metric("Reduction", f"{reduction}%")
+            
+            # Text preview
+            with st.expander("📄 Analyzed Text", expanded=True):
+                st.text_area("", text[:5000], height=200, disabled=True)
+
+# ==================== BATCH PAGE ====================
+
+def show_batch_page():
+    st.markdown("# 📦 Batch Analysis")
+    st.markdown("Upload multiple files for bulk analysis")
+    
+    uploaded_files = st.file_uploader("Upload files", 
+                                     type=['pdf', 'docx', 'xlsx', 'xls', 'txt', 'csv'],
+                                     accept_multiple_files=True)
+    
+    if uploaded_files:
+        st.info(f"📁 {len(uploaded_files)} file(s) selected")
+        
+        if st.button("🔬 Analyze All Files", use_container_width=True, type="primary"):
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            results_container = st.container()
+            
+            for idx, file in enumerate(uploaded_files):
+                progress = (idx + 1) / len(uploaded_files)
+                progress_bar.progress(progress)
+                status_text.text(f"Processing {file.name}...")
+                
+                text = extract_text_from_file(file)
+                if text and not text.startswith("Error"):
+                    sentiment = analyze_sentiment(text)
+                    save_analysis(st.session_state.user['id'], file.name, text, ['sentiment'], {'sentiment': sentiment})
+                    
+                    with results_container:
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            st.markdown(f"**{get_file_icon(file.name)} {file.name}**")
+                        with col2:
+                            st.markdown(f"**{sentiment['label']}** (Score: {sentiment['score']})")
+                        st.divider()
+            
+            status_text.text("✓ All files processed!")
+            st.success("Batch analysis complete!")
+
+# ==================== API PAGE ====================
+
+def show_api_page():
+    st.markdown("# 🔌 API Documentation")
+    st.markdown("Integrate text analysis into your applications")
+    
+    st.markdown("### Your API Key")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.code(st.session_state.user['api_key'])
+    with col2:
+        if st.button("🔄 Regenerate", use_container_width=True):
+            new_key = regenerate_api_key(st.session_state.user['id'])
+            st.session_state.user['api_key'] = new_key
+            st.success("API Key regenerated!")
+            st.rerun()
+    
+    st.markdown("---")
+    
+    st.markdown("### 📍 Endpoint")
+    st.code("POST http://localhost:8501/api/v1/analyze")
+    
+    st.markdown("### 📨 Request Headers")
+    st.code("""Content-Type: application/json
+Authorization: Bearer YOUR_API_KEY""")
+    
+    st.markdown("### 📤 Request Body")
+    st.code("""{
+  "text": "Your text to analyze here...",
+  "analyses": ["sentiment", "entities", "keywords", "language", "emotions", "summary"],
+  "options": {
+    "language": "auto",
+    "summaryLength": "short"
+  }
+}""", language="json")
+    
+    st.markdown("### 💻 Code Examples")
+    
+    tab1, tab2, tab3 = st.tabs(["Python", "JavaScript", "cURL"])
+    
+    with tab1:
+        st.code("""import requests
+
+response = requests.post(
+    "http://localhost:8501/api/v1/analyze",
+    headers={
+        "Authorization": "Bearer YOUR_API_KEY",
+        "Content-Type": "application/json"
+    },
+    json={
+        "text": "Your text here...",
+        "analyses": ["sentiment", "entities"]
+    }
+)
+
+result = response.json()
+print(result)""", language="python")
+    
+    with tab2:
+        st.code("""fetch('http://localhost:8501/api/v1/analyze', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        text: 'Your text here...',
+        analyses: ['sentiment', 'entities']
+    })
+})
+.then(res => res.json())
+.then(data => console.log(data));""", language="javascript")
+    
+    with tab3:
+        st.code("""curl -X POST http://localhost:8501/api/v1/analyze \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"text": "Your text here...", "analyses": ["sentiment", "entities"]}'""", language="bash")
+
+# ==================== HISTORY PAGE ====================
+
+def show_history_page():
+    st.markdown("# 📜 Your Analysis History")
+    
+    analyses = get_user_analyses(st.session_state.user['id'])
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"Showing {len(analyses)} analysis record(s) for {st.session_state.user['name']}")
+    with col2:
+        if st.button("🗑️ Clear History", use_container_width=True):
+            clear_user_analyses(st.session_state.user['id'])
+            st.success("History cleared!")
+            st.rerun()
+    
+    st.info("ℹ️ You can only view your own analysis history. Admins can see all users' data in the Admin Dashboard.")
+    
+    st.markdown("---")
+    
+    if not analyses:
+        st.info("No analysis history yet.")
+    else:
+        for analysis in analyses:
+            with st.container():
+                col1, col2, col3, col4 = st.columns([2, 2, 1, 1])
+                with col1:
+                    st.markdown(f"**{get_file_icon(analysis[2])} {analysis[2]}**")
+                    st.caption(datetime.fromisoformat(analysis[18]).strftime('%Y-%m-%d %H:%M:%S'))
+                with col2:
+                    st.markdown(f"**Types:** {analysis[5]}")
+                with col3:
+                    sentiment_emoji = ""
+                    if analysis[7] and 'Positive' in analysis[7]:
+                        sentiment_emoji = "😊"
+                    elif analysis[7] and 'Negative' in analysis[7]:
+                        sentiment_emoji = "😔"
+                    else:
+                        sentiment_emoji = "😐"
+                    st.markdown(f"{sentiment_emoji} **{analysis[7] or 'N/A'}**")
+                with col4:
+                    st.markdown(f"**{analysis[4]} words**")
+                st.divider()
+
+# ==================== ADMIN PAGE ====================
+
+def show_admin_page():
+    st.markdown("# 👑 Admin Dashboard")
+    
+    stats = get_admin_stats()
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("👥 Total Users", stats['totalUsers'])
+    with col2:
+        st.metric("📊 Total Analyses", stats['totalAnalyses'])
+    with col3:
+        st.metric("😊 Positive Results", stats['positive'])
+    with col4:
+        st.metric("😔 Negative Results", stats['negative'])
+    
+    st.markdown("---")
+    st.markdown("### All User Analyses")
+    st.caption("Complete analysis history from all users (SQL Database)")
+    
+    if st.button("🔄 Refresh Data", use_container_width=False):
+        st.rerun()
+    
+    analyses = get_all_analyses()
+    
+    if not analyses:
+        st.info("No analyses yet. Users will appear here once they start analyzing.")
+    else:
+        # Create a table
+        for analysis in analyses:
+            with st.container():
+                col1, col2, col3, col4, col5, col6 = st.columns([2, 2, 2, 1, 1, 2])
+                with col1:
+                    st.markdown(f"**👤 {analysis[20]}**")
+                    st.caption(analysis[21])
+                with col2:
+                    st.markdown(f"{get_file_icon(analysis[2])} {analysis[2]}")
+                with col3:
+                    st.caption(analysis[5])
+                with col4:
+                    sentiment_emoji = ""
+                    if analysis[7] and 'Positive' in analysis[7]:
+                        sentiment_emoji = "😊"
+                    elif analysis[7] and 'Negative' in analysis[7]:
+                        sentiment_emoji = "😔"
+                    else:
+                        sentiment_emoji = "😐"
+                    st.markdown(f"{sentiment_emoji}")
+                with col5:
+                    st.markdown(f"{analysis[4]} words")
+                with col6:
+                    st.caption(datetime.fromisoformat(analysis[18]).strftime('%Y-%m-%d %H:%M'))
+                st.divider()
 
 # ==================== MAIN ====================
 
-if __name__ == '__main__':
-    init_db()
-    print("\n" + "="*50)
-    print("Document Analyzer - Advanced Text Analysis Platform")
-    print("="*50)
-    print("Server running at: http://localhost:5000")
-    print("="*50 + "\n")
-    app.run(debug=False, host='0.0.0.0', port=5000, use_reloader=False)
+if __name__ == "__main__":
+    if st.session_state.user is None:
+        show_login_page()
+    else:
+        show_main_app()
