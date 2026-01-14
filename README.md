@@ -1,131 +1,97 @@
 🧠 Document Analyzer – Advanced Text & Sentiment Analysis Platform
 
-🔗 Live Demo (Streamlit):
-(Add your Streamlit Cloud link here if deployed)
+🔗 Live Demo:
+(Add your Streamlit Cloud link here)
 
 📄 Overview
 
-Document Analyzer is a comprehensive Streamlit-based web application designed for document-level text analysis and sentiment evaluation.
-The platform allows users to upload documents or input text, automatically extracts content, and performs multiple Natural Language Processing (NLP) tasks including sentiment analysis, entity extraction, keyword identification, language detection, emotion analysis, and summarization.
+Document Analyzer is a Streamlit-based web application for performing advanced text and document analysis using Natural Language Processing (NLP) techniques.
 
-Unlike basic sentiment apps, this system includes user authentication, role-based dashboards (Admin/User), persistent storage using SQLite, batch processing, and API-style integration concepts, making it suitable for academic projects, demos, and analytics prototypes.
+The application supports text input and document uploads, automatically extracts content, performs sentiment analysis, and provides additional insights such as named entities, keywords, language detection, emotion analysis, and text summarization.
+
+This project is designed for academic use, NLP demonstrations, analytics prototypes, and capstone projects.
 
 🎯 Key Features
-📁 Input Support
+📁 Input Capabilities
+Feature	Supported
+Text Input	✅ Yes
+PDF Files	✅ Yes
+DOCX Files	✅ Yes
+TXT Files	✅ Yes
+CSV Files	✅ Yes
+Excel (XLS / XLSX)	✅ Yes
+🧠 NLP & Analysis Modules
+Analysis Type	Description
+Sentiment Analysis	Classifies text as Positive, Negative, or Neutral
+Named Entity Recognition	Extracts People, Organizations, Locations, Emails, URLs
+Keyword Extraction	Identifies high-relevance keywords
+Language Detection	Auto-detects document language
+Emotion Analysis	Detects Joy, Sadness, Anger, Fear, Surprise, Disgust
+Text Summarization	Generates a concise summary
+👤 User & Admin Features
+Feature	User	Admin
+Login / Register	✅	✅
+Sentiment Analysis	✅	✅
+Analysis History	✅	✅ (All Users)
+Dashboard Stats	✅	✅ (Global)
+API Key Access	✅	✅
+User Monitoring	❌	✅
+⚙️ How the Application Works
 
-✅ Text input via browser
-✅ File uploads:
+1️⃣ User Authentication
 
-PDF
+Secure login and registration
 
-DOCX
+Password hashing using SHA-256
 
-TXT
+2️⃣ Text Input or File Upload
 
-CSV
+Upload supported documents or paste text
 
-XLS / XLSX
+3️⃣ Analysis Selection
 
-🧠 NLP & Text Analysis
+Choose one or more NLP tasks
 
-😊 Sentiment Analysis — Positive / Negative / Neutral classification
-🏷️ Named Entity Recognition — People, Organizations, Locations, Emails, URLs
-🔑 Keyword Extraction — Frequency-based relevance scoring
-🌍 Language Detection — Auto-detects supported languages
-❤️ Emotion Analysis — Joy, Sadness, Anger, Fear, Surprise, Disgust
-📄 Text Summarization — Automatic condensed summaries
+4️⃣ Processing Engine
 
-👤 User & Admin System
+Rule-based NLP logic analyzes the content
 
-🔐 Secure login & registration
-🔑 Password hashing (SHA-256)
-👑 Role-based access:
+Sentiment scores and insights are generated
 
-User: Personal dashboard & history
+5️⃣ Results & Storage
 
-Admin: System-wide analytics & monitoring
-📊 Persistent analysis history (SQLite database)
-🔄 API key generation & regeneration
+Results displayed instantly
 
-📊 Dashboards
-
-User sentiment statistics overview
-
-Recent analysis history
-
-Admin dashboard with:
-
-Total users
-
-Total analyses
-
-Global sentiment distribution
-
-⚙️ How It Works
-
-User Authentication
-
-Users log in or register via the Streamlit interface.
-
-Demo accounts are auto-created on first run.
-
-Text Input / File Upload
-
-Users can paste text or upload documents.
-
-Supported files are automatically parsed and converted into plain text.
-
-Analysis Selection
-
-Users select one or more analysis types (sentiment, entities, keywords, etc.).
-
-NLP Processing
-
-Rule-based NLP logic processes the text.
-
-Sentiment scores and classifications are computed.
-
-Additional insights (entities, emotions, summary) are generated.
-
-Results & Storage
-
-Results are displayed instantly on the dashboard.
-
-All analyses are saved in an SQLite database for later access.
+All analyses stored in SQLite database
 
 🧮 Sentiment Analysis Logic
+Component	Details
+Approach	Rule-based NLP
+Score Range	−1.0 to +1.0
+Output Labels	Positive 😊 / Neutral 😐 / Negative 😔
+Confidence	Percentage-based
 
-Polarity-based scoring using curated positive & negative word dictionaries
-
-Score normalization and confidence calculation
-
-Classification rules:
-
-Positive 😊
-
-Neutral 😐
-
-Negative 😔
-
-This lightweight, rule-based approach ensures fast execution without heavy ML models, ideal for demonstrations and coursework.
+✔ Lightweight
+✔ Fast execution
+✔ No heavy ML models
 
 🧰 Tech Stack
-Component	Technology
+Layer	Technology
 Language	Python
 Framework	Streamlit
 Database	SQLite
-NLP Approach	Rule-based NLP
-File Processing	PyPDF2, python-docx, pandas, openpyxl
-UI Styling	Custom CSS (Inter font)
+NLP Method	Rule-based
+File Parsing	PyPDF2, python-docx, pandas
+Styling	Custom CSS (Inter Font)
 Deployment	Streamlit Cloud / Local
-🚀 Installation & Usage
+🚀 Installation & Setup
 1️⃣ Install Dependencies
 pip install streamlit pandas PyPDF2 python-docx openpyxl mammoth
 
 2️⃣ Run the Application
 streamlit run app.py
 
-3️⃣ Open in Browser
+3️⃣ Access in Browser
 http://localhost:8501
 
 🔑 Demo Credentials
@@ -135,53 +101,42 @@ Admin	admin@demo.com
 User	user@demo.com
 	user123
 
-These accounts are automatically created when the app runs for the first time.
+📌 Demo accounts are automatically created on first run.
 
-🗄️ Database
-
-SQLite database: document_analyzer.db
-
-Automatically initialized on first run
-
-Stores:
-
-User accounts
-
-API keys
-
-Analysis metadata
-
-Sentiment & NLP results
-
+🗄️ Database Information
+Item	Details
+Database Type	SQLite
+File Name	document_analyzer.db
+Initialization	Automatic
+Stored Data	Users, Analyses, NLP Results
 🌐 Deployment
-
-Fully compatible with Streamlit Cloud
-
-Works locally and in hosted environments
-
-No external backend required
-
+Platform	Supported
+Local Machine	✅
+Streamlit Cloud	✅
+External Backend	❌ Not Required
 🎯 Use Cases
 
-Academic NLP projects
+Academic NLP Projects
 
-Sentiment analysis of documents
+Sentiment Analysis of Documents
 
-Business analytics demos
+Text Analytics Demonstrations
 
-Text intelligence prototypes
+Business Analytics Prototypes
 
-NLP coursework & capstone projects
+Final Year / Capstone Projects
 
-📌 Notes
+📌 Important Notes
 
-This is a pure Streamlit application (no Flask backend).
+This is a pure Streamlit application
 
-Designed for educational and demonstration purposes.
+No Flask or external backend is used
 
-Uses lightweight NLP logic instead of heavy ML models for speed and clarity.
+Optimized for education and demonstration
+
+Designed for clarity, performance, and usability
 
 📄 License
 
-This project is intended for learning, academic, and demonstration use.
-You are free to modify and extend it.
+This project is released for educational and academic use.
+You are free to modify, extend, and reuse it with proper attribution.
