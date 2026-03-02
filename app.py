@@ -1,18 +1,11 @@
 import re, io, math
 from collections import defaultdict
-from datetime import datetime
 
 import streamlit as st
 import plotly.graph_objects as go
 from afinn import Afinn
 import pdfplumber
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy as np
 
 from nrc_data import NRC_LEXICON, EMOTION_META
 
@@ -125,125 +118,6 @@ def analyze_emotions(text):
 
 def chips(words, cls):
     return " ".join(f'<span class="word-chip {cls}">{w}</span>' for w in words)
-
-# ─────────────────────────────────────────────────────────────
-# REPORT GENERATOR
-# ─────────────────────────────────────────────────────────────
-def generate_report(source_name: str, text: str, sa: dict, ea: dict) -> bytes:
-    """Build a DOCX report: title, 200-word preview, sentiment summary, emotion table + chart."""
-    doc = Document()
-
-    # ── Title ──────────────────────────────────────────────────
-    title = doc.add_heading(level=0)
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = title.add_run('Sentiment Analysis Report')
-    run.font.color.rgb = RGBColor(0x4e, 0x54, 0xc8)
-
-    doc.add_paragraph(f'Source: {source_name}')   \
-       .runs[0].font.bold = True
-    doc.add_paragraph(f'Generated: {datetime.now().strftime("%d %B %Y, %H:%M")}') \
-       .runs[0].italic = True
-    doc.add_paragraph(f'Analysed by: {st.session_state.get("username", "User")}')
-    doc.add_paragraph('')
-
-    # ── Text Preview (first 200 words) ─────────────────────────
-    doc.add_heading('Text Preview (first 200 words)', level=1)
-    words_preview = text.split()
-    preview = ' '.join(words_preview[:200])
-    if len(words_preview) > 200:
-        preview += '…'
-    p = doc.add_paragraph(preview)
-    p.style.font.size = Pt(10)
-    doc.add_paragraph('')
-
-    # ── Sentiment Summary ──────────────────────────────────────
-    doc.add_heading('Sentiment Summary', level=1)
-    tbl = doc.add_table(rows=5, cols=2)
-    tbl.style = 'Table Grid'
-    rows_data = [
-        ('Metric', 'Value'),
-        ('Sentiment', sa['cat']),
-        ('Score (log-normalized)', str(sa['log'])),
-        ('Total Words', str(sa['wc'])),
-        ('Raw AFINN Score', str(int(sa['raw']))),
-    ]
-    for i, (k, v) in enumerate(rows_data):
-        tbl.rows[i].cells[0].text = k
-        tbl.rows[i].cells[1].text = v
-        if i == 0:
-            for cell in tbl.rows[i].cells:
-                for run in cell.paragraphs[0].runs:
-                    run.font.bold = True
-    doc.add_paragraph('')
-
-    if sa['pos']:
-        ph = doc.add_paragraph()
-        ph.add_run('Positive words: ').bold = True
-        ph.add_run(', '.join(sa['pos']))
-    if sa['neg']:
-        ph = doc.add_paragraph()
-        ph.add_run('Negative words: ').bold = True
-        ph.add_run(', '.join(sa['neg']))
-    doc.add_paragraph('')
-
-    # ── Emotion Breakdown Table ────────────────────────────────
-    doc.add_heading('Emotion Breakdown', level=1)
-    sorted_emo = sorted(ea['scores'].items(), key=lambda x: x[1], reverse=True)
-    total_e = ea['total'] or 1
-    etbl = doc.add_table(rows=len(sorted_emo)+1, cols=3)
-    etbl.style = 'Table Grid'
-    headers = ['Emotion', 'Count', 'Percentage']
-    for j, h in enumerate(headers):
-        cell = etbl.rows[0].cells[j]
-        cell.text = h
-        cell.paragraphs[0].runs[0].font.bold = True
-    for i, (e, cnt) in enumerate(sorted_emo):
-        m = EMOTION_META[e]
-        etbl.rows[i+1].cells[0].text = f"{m['emoji']} {m['label']}"
-        etbl.rows[i+1].cells[1].text = str(cnt)
-        etbl.rows[i+1].cells[2].text = f"{round(cnt/total_e*100)}%"
-    doc.add_paragraph('')
-
-    # ── Radar Chart ────────────────────────────────────────────
-    if ea['total'] > 0:
-        doc.add_heading('Emotion Radar Chart', level=1)
-        labels = [EMOTION_META[e]['label'] for e, _ in sorted_emo]
-        vals   = [v for _, v in sorted_emo]
-        N = len(labels)
-        angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
-        vals_plot   = vals   + [vals[0]]
-        angles_plot = angles + [angles[0]]
-        labels_plot = labels + [labels[0]]
-
-        fig, ax = plt.subplots(figsize=(5, 5), subplot_kw=dict(polar=True))
-        ax.plot(angles_plot, vals_plot, color='#4e54c8', linewidth=2)
-        ax.fill(angles_plot, vals_plot, color='#4e54c8', alpha=0.2)
-        ax.set_thetagrids(np.degrees(angles), labels)
-        ax.set_yticklabels([])
-        ax.set_facecolor('#fafbff')
-        ax.spines['polar'].set_color('#e0e0ef')
-        ax.tick_params(labelsize=9)
-        plt.tight_layout()
-
-        img_buf = io.BytesIO()
-        plt.savefig(img_buf, format='png', dpi=150, bbox_inches='tight')
-        plt.close(fig)
-        img_buf.seek(0)
-        doc.add_picture(img_buf, width=Inches(4.5))
-        doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-    # ── Footer ──────────────────────────────────────────────────
-    doc.add_paragraph('')
-    footer_p = doc.add_paragraph('Generated by Sentiment Analyzer Pro · hemanthramhrs@gmail.com')
-    footer_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    footer_p.runs[0].font.color.rgb = RGBColor(0x9c, 0xa3, 0xaf)
-    footer_p.runs[0].font.size = Pt(9)
-
-    buf = io.BytesIO()
-    doc.save(buf)
-    buf.seek(0)
-    return buf.read()
-
 
 # ─────────────────────────────────────────────────────────────
 # SIDEBAR NAVIGATION (only when logged in)
@@ -415,24 +289,6 @@ def page_analyzer():
                     tags=" ".join(f'<span class="emotion-tag" style="background:{m["color"]}22;color:{m["color"]}">{w}</span>' for w in ws)
                     st.markdown(f'<div style="margin-bottom:.6rem"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af">{m["emoji"]} {m["label"]}</div>{tags}</div>', unsafe_allow_html=True)
 
-    # ── Download Report ────────────────────────────────────────
-    if text_to_analyze and 'sa' in dir() and sa and ea:
-        st.markdown('---')
-        st.markdown('### 📥 Download Report')
-        col_dl, col_info = st.columns([1, 3])
-        with col_dl:
-            docx_bytes = generate_report(source_name, text_to_analyze, sa, ea)
-            st.download_button(
-                label='⬇️ Download Word Report (.docx)',
-                data=docx_bytes,
-                file_name=f'sentiment_report_{datetime.now().strftime("%Y%m%d_%H%M")}.docx',
-                mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                type='primary',
-                use_container_width=True,
-            )
-        with col_info:
-            st.info('📄 The report includes: document title, 200-word text preview, sentiment summary table, emotion breakdown table, and a radar chart.')
-
     st.markdown('<div class="footer">© 2026 Sentiment Analyzer Pro · AFINN-165 & NRC Emotion Lexicon</div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
@@ -505,7 +361,7 @@ def page_support():
     with c2:
         st.markdown("""
         <div class="card"><p>📧 <b>Email</b><br>
-        <a href="mailto:hemanthramhrs@gmail.com" style="color:#4e54c8">hemanthramhrs@gmail.com</a></p>
+        <a href="mailto:support@sentimentpro.com" style="color:#4e54c8">support@sentimentpro.com</a></p>
         <hr style="border-color:#f0f0f5"><p>⏱️ <b>Response time</b><br>Within 24 hours</p></div>
         """, unsafe_allow_html=True)
         st.markdown("### 📩 Send a Message")
@@ -534,8 +390,7 @@ def page_connect():
            border-radius:8px;text-decoration:none;font-weight:600;margin-top:.5rem">View on GitHub</a></div>
         <div class="card" style="text-align:center"><div style="font-size:2.5rem">📧</div>
         <h3 style="color:#4e54c8">Email</h3>
-        <p style="color:#6b7280;font-size:.9rem">hemanthramhrs@gmail.com</p>
-        <a href="mailto:hemanthramhrs@gmail.com"
+        <a href="mailto:support@sentimentpro.com"
            style="display:inline-block;background:#4e54c8;color:white;padding:.6rem 1.5rem;
            border-radius:8px;text-decoration:none;font-weight:600;margin-top:.5rem">Send Email</a></div>
         """, unsafe_allow_html=True)
