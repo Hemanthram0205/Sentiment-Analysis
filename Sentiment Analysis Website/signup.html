@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis - Sign Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* CSS Styles */
+        :root {
+            --primary-color: #1da1f2;
+            --secondary-color: #657786;
+            --border-color: #e1e8ed;
+            --background-color: #f5f8fa;
+            --white: #ffffff;
+            --google-color: #5F6368;
+            --apple-color: #000000;
+            --error-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .signup-container {
+            background-color: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            margin: 1rem;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .tagline {
+            color: var(--secondary-color);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .input-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-align: center;
+            border: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background-color: #1991db;
+        }
+        
+        .btn-secondary {
+            background-color: var(--background-color);
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e1e8ed;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--secondary-color);
+            font-size: 0.8rem;
+        }
+        
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .divider::before {
+            margin-right: 0.5rem;
+        }
+        
+        .divider::after {
+            margin-left: 0.5rem;
+        }
+        
+        .social-login {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .social-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.7rem;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: 1px solid var(--border-color);
+            background: var(--white);
+            text-decoration: none;
+        }
+        
+        .social-btn:hover {
+            background-color: #f5f8fa;
+        }
+        
+        .social-btn i {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+        
+        .google-btn {
+            color: var(--google-color);
+        }
+        
+        .apple-btn {
+            color: var(--apple-color);
+        }
+        
+        .links {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            text-align: left;
+            display: none;
+        }
+        
+        .success-message {
+            color: var(--success-color);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .demo-credentials {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background-color: #f0f7ff;
+            border-radius: 5px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        
+        .demo-credentials h3 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .demo-credentials p {
+            margin-bottom: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <div class="logo">Sentiment Analysis</div>
+        <div class="tagline">Understand emotions behind your text</div>
+        
+        <div class="social-login">
+            <a href="#" class="social-btn google-btn" id="google-signup">
+                <i class="fab fa-google"></i>
+                Continue with Google
+            </a>
+            
+            <a href="#" class="social-btn apple-btn" id="apple-signup">
+                <i class="fab fa-apple"></i>
+                Continue with Apple
+            </a>
+        </div>
+        
+        <div class="divider">or</div>
+        
+        <div class="success-message" id="signup-success">
+            Account created successfully! Redirecting to dashboard...
+        </div>
+        
+        <form id="signupForm">
+            <div class="input-group">
+                <label for="fullname">Full Name</label>
+                <input type="text" id="fullname" name="fullname" required>
+                <div class="error-message" id="fullname-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+                <div class="error-message" id="email-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+                <div class="error-message" id="password-error"></div>
+            </div>
+            
+            <div class="input-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input type="password" id="confirm-password" name="confirm-password" required>
+                <div class="error-message" id="confirm-password-error"></div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" id="signup-btn">
+                <span id="btn-text">Create Account</span>
+                <span id="btn-loader" class="loading" style="display: none;"></span>
+            </button>
+        </form>
+        
+        <div class="demo-credentials">
+            <h3>Demo Credentials</h3>
+            <p><strong>Email:</strong> demo@sentiment.com</p>
+            <p><strong>Password:</strong> Demo@123</p>
+            <button class="btn btn-secondary" id="use-demo" style="margin-top: 0.5rem;">Use Demo Account</button>
+        </div>
+        
+        <div class="links">
+            Already have an account? <a href="/login">Log in</a>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript for form handling
+           document.addEventListener('DOMContentLoaded', function() {
+    const signupForm = document.getElementById('signupForm');
+    const googleSignup = document.getElementById('google-signup');
+    const appleSignup = document.getElementById('apple-signup');
+    const signupBtn = document.getElementById('signup-btn');
+    const btnText = document.getElementById('btn-text');
+    const btnLoader = document.getElementById('btn-loader');
+    const useDemoBtn = document.getElementById('use-demo');
+    const signupSuccess = document.getElementById('signup-success');
+    
+    // Form validation and submission
+    signupForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const fullname = document.getElementById('fullname').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        
+        // Validate input
+        if (!fullname || !email || !password || !confirmPassword) {
+            alert('Please fill in all fields');
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+        }
+        
+        try {
+            btnText.textContent = 'Creating account...';
+            btnLoader.style.display = 'inline-block';
+            signupBtn.disabled = true;
+            console.log("Sending post")
+            console.log(JSON.stringify({ fullName: fullname, email, password }))
+            // Send signup request to backend
+            const response = await fetch('http://localhost:8080/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ fullName: fullname, email, password })
+            });
+            console.log(response)
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Registration failed');
+            }
+            
+            // Show success message
+            signupSuccess.style.display = 'block';
+            signupForm.style.display = 'none';
+            
+            // Store token and user data
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            // Redirect after delay
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 10000);
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            btnText.textContent = 'Create Account';
+            btnLoader.style.display = 'none';
+            signupBtn.disabled = false;
+        }
+    });
+    
+    // Google signup
+    googleSignup.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = 'http://localhost:3000/auth/google';
+    });
+    
+    // Apple signup
+    appleSignup.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = 'http://localhost:3000/auth/apple';
+    });
+});
+    </script>
+</body>
+</html>

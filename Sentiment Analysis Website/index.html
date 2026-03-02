@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sentiment Analyzer Pro — AI-powered sentiment analysis for documents and text." />
+  <title>Sentiment Analyzer Pro</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4e54c8;
+      --secondary: #8f94fb;
+      --dark: #1e1e2c;
+      --light: #f5f5f7;
+      --danger: #ff4757;
+      --success: #2ed573;
+      --warning: #ffa502;
+      --border: #e0e0ef;
+      --text-muted: #6b7280;
+      --card-bg: #fff;
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: var(--light);
+      color: var(--dark);
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 4px 20px rgba(78, 84, 200, 0.3);
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 64px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .nav-links a {
+      color: rgba(255, 255, 255, 0.85);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    #userInfo {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: none;
+    }
+
+    .btn-nav {
+      padding: 0.45rem 1.1rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      background: transparent;
+      color: white;
+      transition: all 0.2s;
+    }
+
+    .btn-nav:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-nav.solid {
+      background: white;
+      color: var(--primary);
+      border-color: white;
+    }
+
+    .btn-nav.solid:hover {
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Hamburger */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 4px;
+      background: none;
+      border: none;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: white;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+
+    .mobile-nav {
+      display: none;
+      flex-direction: column;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      padding: 1rem 2rem;
+    }
+
+    .mobile-nav.open {
+      display: flex;
+    }
+
+    .mobile-nav a {
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    /* ── Container ── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 4rem 1rem 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+      line-height: 1.7;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      padding: 0.85rem 2.2rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s;
+      box-shadow: 0 4px 15px rgba(78, 84, 200, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(78, 84, 200, 0.45);
+    }
+
+    /* ── Features ── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0 3rem;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s, box-shadow 0.25s;
+      border: 1px solid var(--border);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 30px rgba(78, 84, 200, 0.15);
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Analysis Panel ── */
+    .analysis-panel {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin: 2rem 0;
+      display: none;
+    }
+
+    .panel-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-tab {
+      padding: 0.6rem 1.5rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .panel-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .input-tab-content {
+      display: none;
+    }
+
+    .input-tab-content.active {
+      display: block;
+    }
+
+    /* File upload */
+    .file-drop {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #fafbff;
+    }
+
+    .file-drop:hover,
+    .file-drop.dragover {
+      border-color: var(--primary);
+      background: rgba(78, 84, 200, 0.05);
+    }
+
+    .file-drop .upload-icon {
+      font-size: 3rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .file-drop p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .file-drop small {
+      color: #aaa;
+      font-size: 0.8rem;
+    }
+
+    .file-drop input[type="file"] {
+      display: none;
+    }
+
+    .file-selected {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: rgba(46, 213, 115, 0.1);
+      border: 1px solid rgba(46, 213, 115, 0.3);
+      border-radius: 10px;
+      font-size: 0.875rem;
+      color: #1a9e4e;
+      display: none;
+    }
+
+    /* Text area */
+    .text-area-wrap textarea {
+      width: 100%;
+      height: 200px;
+      padding: 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      resize: vertical;
+      transition: border-color 0.2s;
+      color: var(--dark);
+    }
+
+    .text-area-wrap textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(78, 84, 200, 0.1);
+    }
+
+    .analyze-btn {
+      margin-top: 1rem;
+      padding: 0.8rem 2rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .analyze-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(78, 84, 200, 0.3);
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── Results ── */
+    .results {
+      margin-top: 2rem;
+      display: none;
+    }
+
+    .score-card {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-box {
+      background: #fafbff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .metric-box .label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    .metric-box .value {
+      font-size: 2rem;
+      font-weight: 800;
+      margin: 0.25rem 0;
+    }
+
+    .metric-box .sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .positive-score {
+      color: var(--success);
+    }
+
+    .negative-score {
+      color: var(--danger);
+    }
+
+    .neutral-score {
+      color: var(--text-muted);
+    }
+
+    .result-card {
+      background: #fafbff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Word highlighting */
+    .negative-word {
+      background: rgba(255, 71, 87, 0.18);
+      padding: 1px 3px;
+      border-radius: 3px;
+      cursor: pointer;
+      position: relative;
+      display: inline-block;
+      transition: all 0.2s;
+    }
+
+    .negative-word:hover,
+    .negative-word.active {
+      background: rgba(255, 71, 87, 0.35);
+      box-shadow: 0 0 0 2px rgba(255, 71, 87, 0.3);
+    }
+
+    .positive-word {
+      background: rgba(46, 213, 115, 0.18);
+      padding: 1px 3px;
+      border-radius: 3px;
+    }
+
+    .suggestions-container {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      padding: 0.75rem;
+      z-index: 999;
+      min-width: 240px;
+      max-width: 320px;
+    }
+
+    .suggestions-container.show {
+      display: block;
+    }
+
+    .suggestion-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.6rem;
+      gap: 0.25rem;
+    }
+
+    .suggestion-tab {
+      padding: 0.35rem 0.7rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      background: none;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+      font-family: inherit;
+    }
+
+    .suggestion-tab.active {
+      border-bottom-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .suggestion-section {
+      display: none;
+    }
+
+    .suggestion-section.active {
+      display: block;
+    }
+
+    .suggestion-item {
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.15s;
+      border: 1px solid transparent;
+      margin-bottom: 0.2rem;
+    }
+
+    .suggestion-item:hover {
+      background: rgba(78, 84, 200, 0.08);
+      border-color: rgba(78, 84, 200, 0.2);
+    }
+
+    .document-preview {
+      margin-top: 1rem;
+      padding: 1rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-height: 320px;
+      overflow-y: auto;
+      line-height: 1.8;
+      font-size: 0.9rem;
+      background: #fafbff;
+    }
+
+    .words-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+    }
+
+    .word-tag {
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .word-tag.negative {
+      background: rgba(255, 71, 87, 0.12);
+      color: var(--danger);
+    }
+
+    .word-tag.positive {
+      background: rgba(46, 213, 115, 0.12);
+      color: #1a9e4e;
+    }
+
+    .word-tag:hover {
+      transform: scale(1.05);
+    }
+
+    /* ── History ── */
+    .history-section {
+      margin-top: 2rem;
+    }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .history-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+
+    .history-card .doc-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-card .meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      background: var(--dark);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 2.5rem 0;
+      text-align: center;
+      margin-top: 4rem;
+    }
+
+    .footer a {
+      color: var(--secondary);
+      text-decoration: none;
+    }
+
+    /* ── Misc ── */
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--dark);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .badge-positive {
+      background: rgba(46, 213, 115, 0.15);
+      color: #1a9e4e;
+    }
+
+    .badge-negative {
+      background: rgba(255, 71, 87, 0.15);
+      color: var(--danger);
+    }
+
+    .badge-neutral {
+      background: rgba(107, 114, 128, 0.15);
+      color: var(--text-muted);
+    }
+
+    .error-inline {
+      color: var(--danger);
+      font-size: 0.85rem;
+      padding: 0.6rem 1rem;
+      background: rgba(255, 71, 87, 0.08);
+      border-radius: 8px;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    /* ── Emotion Analysis ── */
+    .emotion-section {
+      margin-top: 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--card-bg);
+    }
+
+    .emotion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .emotion-header h3 {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .emotion-toggle {
+      font-size: 1rem;
+      transition: transform 0.3s;
+    }
+
+    .emotion-toggle.open {
+      transform: rotate(180deg);
+    }
+
+    .emotion-body {
+      padding: 1.5rem;
+      display: none;
+    }
+
+    .emotion-body.open {
+      display: block;
+    }
+
+    .dominant-emotion {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+
+    .dominant-emoji {
+      font-size: 2.5rem;
+    }
+
+    .dominant-label {
+      font-size: 1.5rem;
+      font-weight: 800;
+    }
+
+    .dominant-sub {
+      font-size: 0.85rem;
+      opacity: 0.8;
+    }
+
+    .emotion-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 640px) {
+      .emotion-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-wrap {
+      position: relative;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .emotion-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .emotion-bar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .emotion-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .emotion-bar-track {
+      height: 8px;
+      background: var(--light);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .emotion-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0;
+    }
+
+    .emotion-words {
+      margin-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+
+    .emotion-words-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--dark);
+    }
+
+    .emotion-word-group {
+      margin-bottom: 0.75rem;
+    }
+
+    .emotion-group-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.35rem;
+    }
+
+    .emotion-tag {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin: 0 0.25rem 0.25rem 0;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+
+      .nav-links,
+      .nav-right {
+        display: none;
+      }
+
+      .hamburger {
+        display: flex;
+      }
+
+      .hero h1 {
+        font-size: 1.8rem;
+      }
+
+      .analysis-panel {
+        padding: 1.5rem 1rem;
+      }
+
+      .score-card {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <nav class="nav">
+      <a href="index.html" class="logo">📊 Sentiment Analyzer Pro</a>
+
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="services.html">Services</a>
+        <a href="support.html">Support</a>
+        <a href="connect.html">Connect</a>
+        <a href="help.html">Help</a>
+      </div>
+
+      <div class="nav-right">
+        <span id="userInfo">👤 <span id="userNameDisplay"></span></span>
+        <button class="btn-nav" id="logoutBtn" style="display:none" onclick="logout()">Logout</button>
+        <a href="login.html" class="btn-nav solid" id="loginLink">Sign In</a>
+      </div>
+
+      <button class="hamburger" id="hamburger" onclick="toggleMobileNav()" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- MobileNav -->
+  <div class="mobile-nav" id="mobileNav">
+    <a href="index.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="services.html">Services</a>
+    <a href="support.html">Support</a>
+    <a href="connect.html">Connect</a>
+    <a href="help.html">Help</a>
+    <a href="login.html" id="mobileLoginLink">Sign In</a>
+    <a href="#" id="mobileLogoutLink" style="display:none" onclick="logout()">Logout</a>
+  </div>
+
+  <!-- ── Main ── -->
+  <main>
+    <div class="container">
+      <!-- Hero -->
+      <section class="hero">
+        <h1>Advanced Sentiment Analysis</h1>
+        <p>Unlock the power of AI to understand emotions in text. Analyze documents or paste text to get instant,
+          actionable sentiment insights.</p>
+        <button class="btn-primary" id="getStartedBtn">Get Started Free</button>
+      </section>
+
+      <!-- Features -->
+      <div class="features">
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h3>Real-time Analysis</h3>
+          <p>Analyze sentiment instantly — upload a PDF, Word document, or paste text directly.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📈</div>
+          <h3>Detailed Reports</h3>
+          <p>Get comprehensive reports with word-level highlighting and actionable improvement suggestions.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3>Secure Platform</h3>
+          <p>Your data is protected with JWT authentication, rate limiting, and server-side security.</p>
+        </div>
+      </div>
+
+      <!-- Analysis Panel -->
+      <div class="analysis-panel" id="analysisPanel">
+        <h2 class="section-title">Analyze Your Content</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.25rem;">Upload a document or paste text
+          below.</p>
+
+        <!-- Input Mode Tabs -->
+        <div class="panel-tabs">
+          <button class="panel-tab active" onclick="switchInputTab('file', this)">📁 Upload File</button>
+          <button class="panel-tab" onclick="switchInputTab('text', this)">✏️ Paste Text</button>
+        </div>
+
+        <!-- File Upload Tab -->
+        <div class="input-tab-content active" id="fileTab">
+          <div class="file-drop" id="fileDrop">
+            <div class="upload-icon">📄</div>
+            <p>Click to browse or drag &amp; drop your file</p>
+            <small>Supported: .docx, .pdf</small>
+            <input type="file" id="fileInput" accept=".docx,.pdf">
+          </div>
+          <div class="file-selected" id="fileSelectedMsg">📎 <span id="selectedFileName"></span></div>
+          <div class="error-inline" id="fileError"></div>
+          <div style="margin-top:1rem">
+            <button class="analyze-btn" id="analyzeFileBtn" onclick="triggerFileAnalysis()">
+              <span class="spinner" id="fileSpinner"></span>
+              <span>Analyze Document</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Text Input Tab -->
+        <div class="input-tab-content" id="textTab">
+          <div class="text-area-wrap">
+            <textarea id="textInput"
+              placeholder="Paste your text here — reviews, emails, feedback, articles..."></textarea>
+          </div>
+          <button class="analyze-btn" id="analyzeTextBtn" onclick="analyzeTextInput()">
+            <span class="spinner" id="textSpinner"></span>
+            <span>Analyze Text</span>
+          </button>
+        </div>
+
+        <!-- Results -->
+        <div class="results" id="results">
+          <hr style="border:none; border-top:1px solid var(--border); margin: 1.5rem 0;">
+
+          <!-- Score cards -->
+          <div class="score-card">
+            <div class="metric-box">
+              <div class="label">Sentiment</div>
+              <div class="value" id="sentimentEmoji">–</div>
+              <div class="sub" id="sentimentLabel">–</div>
+            </div>
+            <div class="metric-box">
+              <div class="label">Score</div>
+              <div class="value" id="sentimentScore" style="font-size:1.5rem">–</div>
+              <div class="sub">log-normalized</div>
+            </div>
+            <div class="metric-box">
+              <div class="label">Total Words</div>
+              <div class="value" id="wordCount" style="font-size:1.5rem">–</div>
+              <div class="sub">tokens</div>
+            </div>
+            <div class="metric-box">
+              <div class="label">Raw AFINN Score</div>
+              <div class="value" id="rawScore" style="font-size:1.5rem">–</div>
+              <div class="sub">sum</div>
+            </div>
+          </div>
+
+          <!-- Positive words -->
+          <div class="result-card" id="positiveSection" style="display:none">
+            <h4 style="color:var(--success); margin-bottom:0.75rem">✅ Positive Words Detected</h4>
+            <div class="words-tags" id="positiveWordsList"></div>
+          </div>
+
+          <!-- ── Emotion Analysis ── -->
+          <div class="emotion-section" id="emotionSection" style="display:none">
+            <div class="emotion-header" onclick="toggleEmotionBody()">
+              <h3>🧠 Emotion Breakdown Analysis</h3>
+              <span class="emotion-toggle" id="emotionToggle">▼</span>
+            </div>
+            <div class="emotion-body" id="emotionBody">
+              <!-- Dominant emotion -->
+              <div class="dominant-emotion" id="dominantEmotionBox">
+                <div class="dominant-emoji" id="dominantEmoji"></div>
+                <div>
+                  <div class="dominant-label" id="dominantLabel"></div>
+                  <div class="dominant-sub" id="dominantSub"></div>
+                </div>
+              </div>
+
+              <!-- Chart + Bars -->
+              <div class="emotion-layout">
+                <div class="chart-wrap">
+                  <canvas id="emotionRadar"></canvas>
+                </div>
+                <div class="emotion-bars" id="emotionBars"></div>
+              </div>
+
+              <!-- Words by Emotion -->
+              <div class="emotion-words">
+                <div class="emotion-words-title">🔍 Words Contributing to Each Emotion</div>
+                <div id="emotionWordGroups"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Negative words & preview -->
+          <div class="result-card" id="negativeSection" style="display:none">
+            <h4 style="color:var(--danger); margin-bottom:0.5rem">⚠️ Negative Words Detected</h4>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem">Click a word below to see
+              replacement suggestions.</p>
+            <div class="words-tags" id="negativeWordsList"></div>
+            <div class="document-preview" id="documentPreview"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Section -->
+      <div id="historySection" style="display:none; margin-bottom: 3rem;">
+        <h2 class="section-title">📋 My Analysis History</h2>
+        <div class="history-grid" id="historyGrid">
+          <p style="color:var(--text-muted)">No analyses yet. Upload a file or paste some text above!</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <p>© <span id="footerYear"></span> Sentiment Analyzer Pro. All rights reserved.</p>
+    <p style="margin-top:0.5rem; font-size:0.85rem">
+      <a href="support.html">Support</a> · <a href="help.html">Help</a> · <a href="about.html">About</a>
+    </p>
+  </footer>
+
+  <!-- ── Scripts ── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="afinn.js"></script>
+  <script src="emotions.js"></script>
+  <script>
+    // ────────────────────────────────────────────────
+    // CONFIG
+    // ────────────────────────────────────────────────
+    const API_BASE = 'http://localhost:3000';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+    document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+    // ────────────────────────────────────────────────
+    // AUTH STATE
+    // ────────────────────────────────────────────────
+    let currentUser = null;
+    let currentToken = null;
+
+    function initAuth() {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      if (token && user) {
+        currentToken = token;
+        currentUser = JSON.parse(user);
+        updateAuthUI(true);
+        loadHistoryFromDB();
+      }
+    }
+
+    function updateAuthUI(loggedIn) {
+      document.getElementById('userInfo').style.display = loggedIn ? 'flex' : 'none';
+      document.getElementById('logoutBtn').style.display = loggedIn ? 'inline-block' : 'none';
+      document.getElementById('loginLink').style.display = loggedIn ? 'none' : 'inline-block';
+      document.getElementById('mobileLoginLink').style.display = loggedIn ? 'none' : 'block';
+      document.getElementById('mobileLogoutLink').style.display = loggedIn ? 'block' : 'none';
+      if (loggedIn && currentUser) {
+        document.getElementById('userNameDisplay').textContent = currentUser.full_name || currentUser.email;
+      }
+      document.getElementById('historySection').style.display = loggedIn ? 'block' : 'none';
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      currentToken = null;
+      currentUser = null;
+      updateAuthUI(false);
+      alert('Logged out successfully.');
+      window.location.href = 'login.html';
+    }
+
+    // ────────────────────────────────────────────────
+    // MOBILE NAV
+    // ────────────────────────────────────────────────
+    function toggleMobileNav() {
+      document.getElementById('mobileNav').classList.toggle('open');
+    }
+
+    // ────────────────────────────────────────────────
+    // GET STARTED BUTTON
+    // ────────────────────────────────────────────────
+    document.getElementById('getStartedBtn').addEventListener('click', () => {
+      const panel = document.getElementById('analysisPanel');
+      panel.style.display = 'block';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // ────────────────────────────────────────────────
+    // INPUT TAB SWITCHING (File / Text)
+    // ────────────────────────────────────────────────
+    function switchInputTab(tab, btn) {
+      document.querySelectorAll('.panel-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('fileTab').classList.toggle('active', tab === 'file');
+      document.getElementById('textTab').classList.toggle('active', tab === 'text');
+      document.getElementById('results').style.display = 'none';
+    }
+
+    // ────────────────────────────────────────────────
+    // FILE UPLOAD
+    // ────────────────────────────────────────────────
+    const fileDrop = document.getElementById('fileDrop');
+    const fileInput = document.getElementById('fileInput');
+    let pendingFile = null;
+
+    fileDrop.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) selectFile(fileInput.files[0]);
+    });
+
+    fileDrop.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      fileDrop.classList.add('dragover');
+    });
+    fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
+    fileDrop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      fileDrop.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]);
+    });
+
+    function selectFile(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const fileError = document.getElementById('fileError');
+      if (ext === 'doc') {
+        fileError.textContent = '⚠️ Legacy .doc files are not supported. Please convert to .docx and try again.';
+        fileError.style.display = 'block';
+        return;
+      }
+      if (!['pdf', 'docx'].includes(ext)) {
+        fileError.textContent = '⚠️ Unsupported format. Please upload a PDF or .docx file.';
+        fileError.style.display = 'block';
+        return;
+      }
+      fileError.style.display = 'none';
+      pendingFile = file;
+      document.getElementById('selectedFileName').textContent = file.name;
+      document.getElementById('fileSelectedMsg').style.display = 'block';
+    }
+
+    function triggerFileAnalysis() {
+      if (!pendingFile) {
+        const err = document.getElementById('fileError');
+        err.textContent = '⚠️ Please select a file first.';
+        err.style.display = 'block';
+        return;
+      }
+      document.getElementById('fileError').style.display = 'none';
+      const ext = pendingFile.name.split('.').pop().toLowerCase();
+      setSpinner('fileSpinner', true);
+      if (ext === 'pdf') extractPDF(pendingFile);
+      else extractDocx(pendingFile);
+    }
+
+    function setSpinner(id, on) {
+      document.getElementById(id).style.display = on ? 'inline-block' : 'none';
+    }
+
+    // ────────────────────────────────────────────────
+    // TEXT EXTRACTION
+    // ────────────────────────────────────────────────
+    function extractPDF(file) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        const arr = new Uint8Array(this.result);
+        pdfjsLib.getDocument(arr).promise.then(pdf => {
+          const pages = [];
+          for (let i = 1; i <= pdf.numPages; i++) {
+            pages.push(pdf.getPage(i).then(p => p.getTextContent().then(tc => tc.items.map(it => it.str).join(' '))));
+          }
+          Promise.all(pages).then(texts => {
+            setSpinner('fileSpinner', false);
+            analyzeText(texts.join('\n\n'), file.name);
+          });
+        }).catch(() => {
+          setSpinner('fileSpinner', false);
+          showFileError('Failed to parse PDF. Please check the file is not encrypted.');
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function extractDocx(file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        mammoth.extractRawText({ arrayBuffer: e.target.result })
+          .then(result => {
+            setSpinner('fileSpinner', false);
+            analyzeText(result.value, file.name);
+          })
+          .catch(() => {
+            setSpinner('fileSpinner', false);
+            showFileError('Failed to parse Word document.');
+          });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function showFileError(msg) {
+      const el = document.getElementById('fileError');
+      el.textContent = '⚠️ ' + msg;
+      el.style.display = 'block';
+    }
+
+    function analyzeTextInput() {
+      const text = document.getElementById('textInput').value.trim();
+      if (!text) { alert('Please enter some text first.'); return; }
+      setSpinner('textSpinner', true);
+      setTimeout(() => {
+        setSpinner('textSpinner', false);
+        analyzeText(text, 'Pasted Text');
+      }, 300);
+    }
+
+    // ────────────────────────────────────────────────
+    // SENTIMENT ANALYSIS
+    // ────────────────────────────────────────────────
+    let negativeWordsFound = [];
+    let positiveWordsFound = [];
+
+    function analyzeText(text, source) {
+      const words = text.toLowerCase().match(/\b[\w']+\b/g) || [];
+      let totalScore = 0;
+      negativeWordsFound = [];
+      positiveWordsFound = [];
+
+      const negSet = new Set();
+      const posSet = new Set();
+
+      words.forEach(w => {
+        if (afinn[w] !== undefined) {
+          totalScore += afinn[w];
+          if (afinn[w] < 0 && !negSet.has(w)) { negSet.add(w); negativeWordsFound.push(w); }
+          if (afinn[w] > 0 && !posSet.has(w)) { posSet.add(w); positiveWordsFound.push(w); }
+        }
+      });
+
+      // Log normalization
+      let logScore = 0;
+      if (totalScore !== 0) {
+        const sign = totalScore > 0 ? 1 : -1;
+        logScore = sign * Math.log10(1 + Math.abs(totalScore));
+      }
+
+      let emoji, label, scoreClass;
+      if (logScore > 0.3) { emoji = '😀'; label = 'Positive'; scoreClass = 'positive-score'; }
+      else if (logScore < -0.3) { emoji = '😡'; label = 'Negative'; scoreClass = 'negative-score'; }
+      else { emoji = '😐'; label = 'Neutral'; scoreClass = 'neutral-score'; }
+
+      // Update score cards
+      const scoreEl = document.getElementById('sentimentScore');
+      scoreEl.textContent = logScore.toFixed(3);
+      scoreEl.className = 'value ' + scoreClass;
+      document.getElementById('sentimentEmoji').textContent = emoji;
+      document.getElementById('sentimentLabel').textContent = label;
+      document.getElementById('wordCount').textContent = words.length;
+      document.getElementById('rawScore').textContent = totalScore;
+
+      // Positive words
+      const posSection = document.getElementById('positiveSection');
+      if (positiveWordsFound.length > 0) {
+        posSection.style.display = 'block';
+        document.getElementById('positiveWordsList').innerHTML =
+          positiveWordsFound.map(w => `<span class="word-tag positive">${w}</span>`).join('');
+      } else {
+        posSection.style.display = 'none';
+      }
+
+      // Negative words + preview
+      const negSection = document.getElementById('negativeSection');
+      if (negativeWordsFound.length > 0) {
+        negSection.style.display = 'block';
+        document.getElementById('negativeWordsList').innerHTML =
+          negativeWordsFound.map(w => `<span class="word-tag negative" onclick="scrollToWord('${w}')">${w}</span>`).join('');
+        renderHighlightedPreview(text);
+      } else {
+        negSection.style.display = 'none';
+      }
+
+      document.getElementById('results').style.display = 'block';
+
+      // ── Emotion Analysis ──
+      const emotionResult = analyzeEmotions(text);
+      renderEmotionAnalysis(emotionResult);
+
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Save to DB if logged in
+      if (currentToken) saveAnalysisToDB(source, logScore, label);
+    }
+
+    // ────────────────────────────────────────────────
+    // HIGHLIGHTED PREVIEW
+    // ────────────────────────────────────────────────
+    // ────────────────────────────────────────────────
+    // EMOTION ANALYSIS UI
+    // ────────────────────────────────────────────────
+    let emotionChart = null;
+
+    function toggleEmotionBody() {
+      const body = document.getElementById('emotionBody');
+      const toggle = document.getElementById('emotionToggle');
+      body.classList.toggle('open');
+      toggle.classList.toggle('open');
+    }
+
+    function renderEmotionAnalysis({ scores, dominant, wordsByEmotion, total }) {
+      const section = document.getElementById('emotionSection');
+      if (total === 0) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+
+      // Auto-open the panel
+      document.getElementById('emotionBody').classList.add('open');
+      document.getElementById('emotionToggle').classList.add('open');
+
+      const meta = emotionMeta;
+      const dominant_meta = meta[dominant];
+
+      // ── Dominant emotion box ──
+      const box = document.getElementById('dominantEmotionBox');
+      box.style.background = dominant_meta.color + '22';
+      box.style.border = '1.5px solid ' + dominant_meta.color;
+      document.getElementById('dominantEmoji').textContent = dominant_meta.emoji;
+      document.getElementById('dominantLabel').textContent = dominant_meta.label;
+      document.getElementById('dominantLabel').style.color = dominant_meta.color;
+      document.getElementById('dominantSub').textContent =
+        `Dominant emotion · ${scores[dominant]} word${scores[dominant] !== 1 ? 's' : ''} detected`;
+
+      // Sort emotions by score descending
+      const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+      const maxScore = sorted[0][1] || 1;
+
+      // ── Progress bars ──
+      const barsEl = document.getElementById('emotionBars');
+      barsEl.innerHTML = sorted.map(([e, count]) => {
+        const pct = Math.round((count / total) * 100);
+        const m = meta[e];
+        return `
+          <div class="emotion-bar-row">
+            <div class="emotion-bar-label">
+              <span>${m.emoji} ${m.label}</span>
+              <span>${pct}% (${count})</span>
+            </div>
+            <div class="emotion-bar-track">
+              <div class="emotion-bar-fill"
+                   id="bar_${e}"
+                   style="background:${m.color}; width:0"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Animate bars after paint
+      requestAnimationFrame(() => {
+        sorted.forEach(([e, count]) => {
+          const pct = Math.round((count / maxScore) * 100);
+          const bar = document.getElementById(`bar_${e}`);
+          if (bar) bar.style.width = pct + '%';
+        });
+      });
+
+      // ── Radar chart ──
+      const labels = sorted.map(([e]) => meta[e].emoji + ' ' + meta[e].label);
+      const data = sorted.map(([, v]) => v);
+      const colors = sorted.map(([e]) => meta[e].color);
+
+      if (emotionChart) { emotionChart.destroy(); emotionChart = null; }
+      const ctx = document.getElementById('emotionRadar').getContext('2d');
+      emotionChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Emotions',
+            data,
+            backgroundColor: 'rgba(78,84,200,0.15)',
+            borderColor: 'rgba(78,84,200,0.8)',
+            pointBackgroundColor: colors,
+            pointBorderColor: '#fff',
+            pointRadius: 5,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            r: {
+              beginAtZero: true,
+              ticks: { display: false },
+              pointLabels: { font: { size: 11 } },
+              grid: { color: 'rgba(0,0,0,0.07)' }
+            }
+          }
+        }
+      });
+
+      // ── Words by emotion ──
+      const groupsEl = document.getElementById('emotionWordGroups');
+      const activeEmotions = sorted.filter(([, v]) => v > 0);
+      groupsEl.innerHTML = activeEmotions.map(([e]) => {
+        const m = meta[e];
+        const words = wordsByEmotion[e];
+        if (!words.length) return '';
+        const tags = words.map(w =>
+          `<span class="emotion-tag" style="background:${m.color}22; color:${m.color}">${w}</span>`
+        ).join('');
+        return `
+          <div class="emotion-word-group">
+            <div class="emotion-group-label">${m.emoji} ${m.label}</div>
+            <div>${tags}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderHighlightedPreview(text) {
+      const segments = text.split(/([\s]+)/);
+      let html = '';
+      segments.forEach(seg => {
+        if (/^\s+$/.test(seg)) { html += seg; return; }
+        const word = seg.toLowerCase().replace(/[^a-z']/g, '');
+        if (negativeWordsFound.includes(word)) {
+          html += buildNegativeSpan(seg, word);
+        } else if (positiveWordsFound.includes(word)) {
+          html += `<span class="positive-word">${seg}</span>`;
+        } else {
+          html += seg;
+        }
+      });
+      document.getElementById('documentPreview').innerHTML = html;
+      attachSuggestionEvents();
+    }
+
+    function buildNegativeSpan(seg, word) {
+      const sugg = wordSuggestions[word] || {};
+      const types = ['synonyms', 'rephrasing', 'ai'];
+      let html = `<span class="negative-word" data-word="${word}">${seg}`;
+      html += `<div class="suggestions-container">`;
+      html += `<div class="suggestion-tabs">`;
+      types.forEach((t, i) => html += `<button class="suggestion-tab${i === 0 ? ' active' : ''}" data-tab="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</button>`);
+      html += `</div>`;
+      types.forEach((t, i) => {
+        html += `<div class="suggestion-section${i === 0 ? ' active' : ''}" data-section="${t}">`;
+        const items = sugg[t] || [];
+        if (items.length) {
+          items.forEach(s => { html += `<div class="suggestion-item">${s}</div>`; });
+        } else {
+          html += `<div class="suggestion-item" style="color:var(--text-muted)">No suggestions available</div>`;
+        }
+        html += `</div>`;
+      });
+      html += `</div></span>`;
+      return html;
+    }
+
+    function attachSuggestionEvents() {
+      document.querySelectorAll('.negative-word').forEach(el => {
+        el.addEventListener('click', function (e) {
+          e.stopPropagation();
+          const box = this.querySelector('.suggestions-container');
+          // Close all others
+          document.querySelectorAll('.suggestions-container').forEach(b => {
+            if (b !== box) b.classList.remove('show');
+          });
+          document.querySelectorAll('.negative-word').forEach(w => {
+            if (w !== this) w.classList.remove('active');
+          });
+          box.classList.toggle('show');
+          this.classList.toggle('active');
+        });
+
+        // Tab switching
+        el.querySelectorAll('.suggestion-tab').forEach(tab => {
+          tab.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const type = this.dataset.tab;
+            const box = this.closest('.suggestions-container');
+            box.querySelectorAll('.suggestion-tab').forEach(t => t.classList.remove('active'));
+            box.querySelectorAll('.suggestion-section').forEach(s => s.classList.remove('active'));
+            this.classList.add('active');
+            box.querySelector(`[data-section="${type}"]`).classList.add('active');
+          });
+        });
+      });
+
+      // Close on outside click
+      document.addEventListener('click', () => {
+        document.querySelectorAll('.suggestions-container').forEach(b => b.classList.remove('show'));
+        document.querySelectorAll('.negative-word').forEach(w => w.classList.remove('active'));
+      });
+    }
+
+    function scrollToWord(word) {
+      const el = document.querySelector(`.negative-word[data-word="${word}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.boxShadow = '0 0 0 3px rgba(255,71,87,0.5)';
+        setTimeout(() => el.style.boxShadow = '', 2000);
+      }
+    }
+
+    // ────────────────────────────────────────────────
+    // HISTORY (DB-backed)
+    // ────────────────────────────────────────────────
+    async function saveAnalysisToDB(filename, score, sentiment) {
+      try {
+        await fetch(`${API_BASE}/api/analyses`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentToken}`
+          },
+          body: JSON.stringify({ filename, score, sentiment, negative_words: negativeWordsFound })
+        });
+        loadHistoryFromDB(); // Refresh
+      } catch (_) { /* non-critical */ }
+    }
+
+    async function loadHistoryFromDB() {
+      if (!currentToken) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/analyses`, {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        if (!res.ok) return;
+        const analyses = await res.json();
+        renderHistory(analyses);
+      } catch (_) { /* non-critical */ }
+    }
+
+    function renderHistory(analyses) {
+      const grid = document.getElementById('historyGrid');
+      if (!analyses.length) {
+        grid.innerHTML = '<p style="color:var(--text-muted)">No analyses yet. Upload a file or paste some text above!</p>';
+        return;
+      }
+      grid.innerHTML = analyses.map(a => {
+        let badgeClass = 'badge-neutral';
+        if (a.score > 0.3) badgeClass = 'badge-positive';
+        if (a.score < -0.3) badgeClass = 'badge-negative';
+        const date = new Date(a.analyzed_at).toLocaleString();
+        return `
+          <div class="history-card">
+            <div class="doc-name" title="${a.filename}">📄 ${a.filename}</div>
+            <div class="meta">${date}</div>
+            <div style="margin-top:0.75rem; display:flex; align-items:center; gap:0.5rem;">
+              <span class="badge ${badgeClass}">${a.sentiment}</span>
+              <span style="font-size:0.8rem; color:var(--text-muted)">Score: ${Number(a.score).toFixed(3)}</span>
+            </div>
+            ${a.negative_words && a.negative_words.length ? `<div class="meta" style="margin-top:0.5rem">⚠️ ${a.negative_words.slice(0, 5).join(', ')}${a.negative_words.length > 5 ? '…' : ''}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ────────────────────────────────────────────────
+    // INIT
+    // ────────────────────────────────────────────────
+    initAuth();
+  </script>
+</body>
+
+</html>

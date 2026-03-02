@@ -1,0 +1,24 @@
+<!-- login-success.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Successful</title>
+</head>
+<body>
+  <h1>✅ Google Login Successful!</h1>
+  <p id="tokenDisplay">Loading token...</p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    if (token) {
+      document.getElementById('tokenDisplay').textContent = "JWT Token: " + token;
+      localStorage.setItem("authToken", token);
+    } else {
+      document.getElementById('tokenDisplay').textContent = "No token received.";
+    }
+  </script>
+</body>
+</html>

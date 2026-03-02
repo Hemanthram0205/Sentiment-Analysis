@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - Sentiment Analyzer Pro</title>
+    <style>
+        /* Same CSS as index.html */
+        :root {
+            --primary: #4e54c8;
+            --secondary: #8f94fb;
+            --dark: #1e1e2c;
+            --light: #f5f5f7;
+            --danger: #ff4757;
+            --success: #2ed573;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+        }
+        
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 4px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: white;
+            color: var(--primary);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+        }
+        
+        .support-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .support-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        
+        .support-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .faq {
+            margin-top: 3rem;
+        }
+        
+        .faq-item {
+            margin-bottom: 1rem;
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        
+        .faq-question {
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .faq-answer {
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .contact-form {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-top: 3rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <a href="index.html" class="logo">
+                <span>📊</span>
+                <span>Sentiment Analyzer Pro</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About</a>
+                <a href="services.html">Services</a>
+                <a href="support.html" class="active">Support</a>
+                <a href="connect.html">Connect</a>
+                <a href="help.html">Help</a>
+            </div>
+            
+            <div class="auth-buttons">
+                <button class="btn btn-outline" id="loginBtn">Login</button>
+                <button class="btn btn-primary">Sign Up</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Support Center</h1>
+            <p>We're here to help you with any questions or issues</p>
+        </div>
+        
+        <div class="support-options">
+            <div class="support-card">
+                <div class="support-icon">📞</div>
+                <h3>Phone Support</h3>
+                <p>Call us at <strong>1-800-SENTIME</strong> (1-800-736-8463)</p>
+                <p>Monday-Friday: 9am-5pm EST</p>
+            </div>
+            
+            <div class="support-card">
+                <div class="support-icon">✉️</div>
+                <h3>Email Support</h3>
+                <p>Email us at <strong>support@sentimentanalyzerpro.com</strong></p>
+                <p>Typically respond within 24 hours</p>
+            </div>
+            
+            <div class="support-card">
+                <div class="support-icon">💬</div>
+                <h3>Live Chat</h3>
+                <p>Chat with a support agent in real-time</p>
+                <button class="btn btn-primary" style="margin-top: 1rem;">Start Chat</button>
+            </div>
+        </div>
+        
+        <div class="faq">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Frequently Asked Questions</h2>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>How do I upload documents for analysis?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Simply go to the Home page and click "Get Started". Then you can upload Word documents (.docx) or PDF files. Our system will automatically process them and provide sentiment analysis results.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>What file formats do you support?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>We currently support Microsoft Word documents (.docx) and PDF files. We're working on adding support for more formats in future updates.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>How accurate is your sentiment analysis?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Our sentiment analysis is about 85-90% accurate for general text. Accuracy may vary depending on the complexity of the text and domain-specific language.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Can I analyze multiple documents at once?</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Yes! With our Pro and Enterprise plans, you can upload multiple documents at once and get batch analysis results.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="contact-form">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Contact Us</h2>
+            <form>
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="subject">Subject</label>
+                    <input type="text" id="subject" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" class="form-control" rows="5" required></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;">Send Message</button>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2023 Sentiment Analyzer Pro. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Simple login/logout functionality
+        const loginBtn = document.getElementById('loginBtn');
+        let isLoggedIn = false;
+        
+        loginBtn.addEventListener('click', () => {
+            if (isLoggedIn) {
+                loginBtn.textContent = 'Login';
+                isLoggedIn = false;
+            } else {
+                // In a real app, this would open a login modal
+                loginBtn.textContent = 'Logout';
+                isLoggedIn = true;
+            }
+        });
+        
+        // FAQ toggle functionality
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const answer = question.nextElementSibling;
+                const isOpen = answer.style.display === 'block';
+                
+                // Close all answers first
+                document.querySelectorAll('.faq-answer').forEach(ans => {
+                    ans.style.display = 'none';
+                    ans.previousElementSibling.querySelector('span:last-child').textContent = '+';
+                });
+                
+                // Open clicked answer if it was closed
+                if (!isOpen) {
+                    answer.style.display = 'block';
+                    question.querySelector('span:last-child').textContent = '-';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

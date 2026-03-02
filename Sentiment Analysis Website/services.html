@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Services - Sentiment Analyzer Pro</title>
+    <style>
+        /* Same CSS as index.html */
+        :root {
+            --primary: #4e54c8;
+            --secondary: #8f94fb;
+            --dark: #1e1e2c;
+            --light: #f5f5f7;
+            --danger: #ff4757;
+            --success: #2ed573;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+        }
+        
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 4px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: white;
+            color: var(--primary);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .service-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .service-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .pricing {
+            margin-top: 3rem;
+        }
+        
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .pricing-table th, .pricing-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .pricing-table th {
+            background-color: #f8f9fa;
+        }
+        
+        .footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <a href="index.html" class="logo">
+                <span>📊</span>
+                <span>Sentiment Analyzer Pro</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About</a>
+                <a href="services.html" class="active">Services</a>
+                <a href="support.html">Support</a>
+                <a href="connect.html">Connect</a>
+                <a href="help.html">Help</a>
+            </div>
+            
+            <div class="auth-buttons">
+                <button class="btn btn-outline" id="loginBtn">Login</button>
+                <button class="btn btn-primary">Sign Up</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Our Services</h1>
+            <p>Comprehensive sentiment analysis solutions for your needs</p>
+        </div>
+        
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-icon">📝</div>
+                <h3>Document Analysis</h3>
+                <p>Upload Word documents or PDFs and get detailed sentiment analysis reports with visualizations.</p>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">🌐</div>
+                <h3>Web Content Analysis</h3>
+                <p>Analyze sentiment from web pages, blogs, or online articles with our powerful scraping tools.</p>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">📱</div>
+                <h3>Social Media Monitoring</h3>
+                <p>Track sentiment trends across social media platforms in real-time.</p>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">📊</div>
+                <h3>Custom Dashboards</h3>
+                <p>Get personalized dashboards with historical data and trend analysis.</p>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">🔌</div>
+                <h3>API Access</h3>
+                <p>Integrate our sentiment analysis into your own applications with our developer API.</p>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">🏢</div>
+                <h3>Enterprise Solutions</h3>
+                <p>Custom solutions tailored to your organization's specific needs.</p>
+            </div>
+        </div>
+        
+        <div class="pricing">
+            <h2 style="text-align: center; margin-top: 3rem;">Pricing Plans</h2>
+            <table class="pricing-table">
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Features</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Basic</td>
+                        <td>50 analyses/month, Document uploads, Basic reports</td>
+                        <td>₹699/month</td>
+                    </tr>
+                    <tr>
+                        <td>Pro</td>
+                        <td>500 analyses/month, API access, Advanced reports</td>
+                        <td>₹1,500/month</td>
+                    </tr>
+                    <tr>
+                        <td>Enterprise</td>
+                        <td>Unlimited analyses, Custom solutions, Priority support</td>
+                        <td>₹9,999/month</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2023 Sentiment Analyzer Pro. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Simple login/logout functionality
+        const loginBtn = document.getElementById('loginBtn');
+        let isLoggedIn = false;
+        
+        loginBtn.addEventListener('click', () => {
+            if (isLoggedIn) {
+                loginBtn.textContent = 'Login';
+                isLoggedIn = false;
+            } else {
+                // In a real app, this would open a login modal
+                loginBtn.textContent = 'Logout';
+                isLoggedIn = true;
+            }
+        });
+    </script>
+</body>
+</html>
