@@ -9,11 +9,36 @@ st.set_page_config(
 
 st.markdown(COMMON_CSS, unsafe_allow_html=True)
 
-# If already logged in, go straight to analyzer
+# ── If already logged in, show home instead of login form ─────
 if st.session_state.get("authenticated"):
-    st.switch_page("pages/1_Analyzer.py")
+    username = st.session_state.get("username", "User")
+    st.markdown(f"""
+    <div class="page-hero">
+      <h1>👋 Welcome back, {username}!</h1>
+      <p>You are signed in. Use the sidebar to navigate.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ── Login UI ──────────────────────────────────────────────────
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.page_link("pages/1_Analyzer.py",  label="📊 Analyzer",  use_container_width=True)
+        st.page_link("pages/2_About.py",     label="ℹ️ About",    use_container_width=True)
+    with col2:
+        st.page_link("pages/3_Services.py",  label="🛠️ Services", use_container_width=True)
+        st.page_link("pages/4_Support.py",   label="💬 Support",  use_container_width=True)
+    with col3:
+        st.page_link("pages/5_Connect.py",   label="🔗 Connect",  use_container_width=True)
+        st.page_link("pages/6_Help.py",      label="❓ Help",     use_container_width=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🚪 Logout", type="secondary"):
+        st.session_state.clear()
+        st.rerun()
+
+    st.markdown('<div class="footer">© 2026 Sentiment Analyzer Pro</div>', unsafe_allow_html=True)
+    st.stop()
+
+# ── Login / Sign Up UI ────────────────────────────────────────
 st.markdown("""
 <div style="text-align:center;margin-bottom:2rem">
   <div style="font-size:3rem">📊</div>
@@ -24,14 +49,11 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Card wrapper
-st.markdown('<div class="card" style="max-width:400px;margin:0 auto">', unsafe_allow_html=True)
-
 tab_login, tab_signup = st.tabs(["Sign In", "Sign Up"])
 
-# ── Sign In ──────────────────────────────────────────────────
+# ── Sign In ───────────────────────────────────────────────────
 with tab_login:
-    with st.form("login_form", clear_on_submit=False):
+    with st.form("login_form"):
         username = st.text_input("Email / Username", placeholder="demo")
         password = st.text_input("Password", type="password", placeholder="demo123")
         submitted = st.form_submit_button("Sign In", use_container_width=True, type="primary")
@@ -40,17 +62,15 @@ with tab_login:
         if not username or not password:
             st.error("Please fill in both fields.")
         else:
-            # Load credentials from secrets (or fallback demo credentials)
             try:
-                users = st.secrets["users"]
+                users = dict(st.secrets["users"])
             except Exception:
                 users = {"demo": "demo123", "admin": "admin123"}
 
             if username in users and users[username] == password:
                 st.session_state["authenticated"] = True
                 st.session_state["username"] = username
-                st.success("✅ Login successful! Redirecting…")
-                st.switch_page("pages/1_Analyzer.py")
+                st.rerun()          # ← rerun instead of switch_page
             else:
                 st.error("❌ Invalid username or password.")
 
@@ -77,17 +97,8 @@ with tab_signup:
         elif new_pass != new_conf:
             st.error("Passwords do not match.")
         else:
-            # For Streamlit Cloud: user management requires a backend DB.
-            # This demo auto-logs in after "registration".
             st.session_state["authenticated"] = True
             st.session_state["username"] = new_email.split("@")[0]
-            st.success("✅ Account created! Redirecting…")
-            st.switch_page("pages/1_Analyzer.py")
+            st.rerun()              # ← rerun instead of switch_page
 
-st.markdown("</div>", unsafe_allow_html=True)
-
-# Footer
-st.markdown(
-    '<div class="footer">© 2026 Sentiment Analyzer Pro</div>',
-    unsafe_allow_html=True
-)
+st.markdown('<div class="footer">© 2026 Sentiment Analyzer Pro</div>', unsafe_allow_html=True)

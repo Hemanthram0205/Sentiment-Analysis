@@ -108,12 +108,9 @@ COMMON_CSS = """
 </style>
 """
 
-# ── Auth Check ────────────────────────────────────────────────
+# ── Auth Guard ────────────────────────────────────────────────
 def require_auth():
-    """
-    Call at the top of every protected page.
-    Returns True if authenticated, stops the page if not.
-    """
+    """Call at the top of every protected page. Stops page if not authenticated."""
     st.markdown(COMMON_CSS, unsafe_allow_html=True)
     if not st.session_state.get("authenticated"):
         st.markdown("""
@@ -123,7 +120,7 @@ def require_auth():
           <p style="color:#6b7280">Please sign in to access this page.</p>
         </div>
         """, unsafe_allow_html=True)
-        st.page_link("app.py", label="Go to Sign In", icon="🔑")
+        st.page_link("app.py", label="🔑 Go to Sign In")   # ← page_link, not switch_page
         st.stop()
     return True
 
@@ -131,7 +128,7 @@ def require_auth():
 def show_nav(current_page: str = ""):
     """Show top navigation bar with user info and logout button."""
     username = st.session_state.get("username", "User")
-    col1, col2 = st.columns([4, 1])
+    col1, col2 = st.columns([5, 1])
     with col1:
         st.markdown(f"""
         <div class="site-nav">
@@ -140,7 +137,6 @@ def show_nav(current_page: str = ""):
         </div>
         """, unsafe_allow_html=True)
     with col2:
-        if st.button("🚪 Logout", key="logout_btn", use_container_width=True):
-            for key in ["authenticated", "username"]:
-                st.session_state.pop(key, None)
-            st.switch_page("app.py")
+        if st.button("🚪 Logout", key="logout_nav", use_container_width=True):
+            st.session_state.clear()
+            st.rerun()              # ← rerun instead of switch_page
