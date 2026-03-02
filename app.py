@@ -29,36 +29,45 @@ st.markdown("""
   #MainMenu, footer, header { visibility: hidden; }
   .page-hero {
     background: linear-gradient(135deg, #4e54c8, #8f94fb);
-    padding: 2.5rem 2rem; border-radius: 16px; color: white;
+    padding: 2.5rem 2rem; border-radius: 16px; color: white !important;
     text-align: center; margin-bottom: 2rem;
   }
-  .page-hero h1 { font-size: 2rem; font-weight: 800; margin: 0; }
-  .page-hero p  { font-size: 1rem; opacity: 0.88; margin: 0.4rem 0 0; }
+  .page-hero h1 { font-size: 2rem; font-weight: 800; margin: 0; color: white !important; }
+  .page-hero p  { font-size: 1rem; opacity: 0.88; margin: 0.4rem 0 0; color: white !important; }
   .card {
-    background: white; border: 1px solid #e0e0ef; border-radius: 14px;
+    background: white !important; border: 1px solid #e0e0ef; border-radius: 14px;
     padding: 1.5rem; box-shadow: 0 4px 16px rgba(0,0,0,0.06); margin-bottom: 1rem;
+    color: #1f2937 !important;
   }
+  .card h3, .card h4, .card p, .card li, .card b, .card span, .card a { color: #1f2937 !important; }
+  .card h3[style*="color:#4e54c8"], .card h4[style*="color:#4e54c8"] { color: #4e54c8 !important; }
   .metric-card {
-    background: white; border: 1px solid #e0e0ef; border-radius: 16px;
+    background: white !important; border: 1px solid #e0e0ef; border-radius: 16px;
     padding: 1.25rem; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    color: #1f2937 !important;
   }
   .metric-label { font-size:.72rem; font-weight:700; text-transform:uppercase;
-    letter-spacing:.05em; color:#6b7280; margin-bottom:.3rem; }
-  .metric-value { font-size:2rem; font-weight:800; line-height:1.1; }
-  .metric-sub   { font-size:.78rem; color:#9ca3af; margin-top:.25rem; }
-  .positive{color:#2ed573} .negative{color:#ff4757} .neutral{color:#9ca3af}
+    letter-spacing:.05em; color:#6b7280 !important; margin-bottom:.3rem; }
+  .metric-value { font-size:2rem; font-weight:800; line-height:1.1; color:#1f2937 !important; }
+  .metric-sub   { font-size:.78rem; color:#9ca3af !important; margin-top:.25rem; }
+  .positive{color:#2ed573 !important} .negative{color:#ff4757 !important} .neutral{color:#9ca3af !important}
   .result-box {
-    background:#fafbff; border:1px solid #e0e0ef; border-radius:12px;
-    padding:1.1rem 1.4rem; margin-bottom:.9rem;
+    background:#f8f9ff !important; border:1px solid #e0e0ef; border-radius:12px;
+    padding:1.1rem 1.4rem; margin-bottom:.9rem; color:#1f2937 !important;
   }
+  .result-box b { color:#1f2937 !important; }
   .word-chip { display:inline-block; padding:.3rem .75rem; border-radius:20px;
     font-size:.78rem; font-weight:600; margin:.2rem; }
-  .chip-neg{background:rgba(255,71,87,.12);color:#ff4757}
-  .chip-pos{background:rgba(46,213,115,.12);color:#1a9e4e}
+  .chip-neg{background:rgba(255,71,87,.15) !important;color:#ff4757 !important}
+  .chip-pos{background:rgba(46,213,115,.15) !important;color:#1a9e4e !important}
   .emotion-tag { display:inline-block; padding:.25rem .65rem; border-radius:20px;
     font-size:.78rem; font-weight:600; margin:.2rem .2rem .2rem 0; }
-  .footer { text-align:center; color:#9ca3af; font-size:.83rem;
+  .footer { text-align:center; color:#9ca3af !important; font-size:.83rem;
     margin-top:3rem; padding:1.5rem 0; border-top:1px solid #f0f0f5; }
+  /* Force dark text in all inline HTML divs */
+  [data-testid="stMarkdownContainer"] p,
+  [data-testid="stMarkdownContainer"] li,
+  [data-testid="stMarkdownContainer"] span { color: inherit; }
 </style>
 """, unsafe_allow_html=True)
 
