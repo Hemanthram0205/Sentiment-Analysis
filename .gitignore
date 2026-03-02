@@ -3,8 +3,18 @@
 .env.local
 .env.*.local
 
+# Streamlit secrets — NEVER commit this
+.streamlit/secrets.toml
+
 # Node modules
 node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
 
 # Logs
 *.log
