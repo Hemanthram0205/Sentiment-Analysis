@@ -181,6 +181,7 @@ st.markdown("""
   [data-testid="stMarkdownContainer"] span { color: inherit; }
   /* Keep sidebar always open — hide all collapse/expand toggle buttons */
   [data-testid="collapsedControl"],
+  [data-testid="stSidebarCollapseButton"],
   button[kind="header"],
   section[data-testid="stSidebar"] > div:first-child > div > button,
   .st-emotion-cache-1ihkpx7 { display: none !important; }
