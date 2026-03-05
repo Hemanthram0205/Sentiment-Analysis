@@ -177,6 +177,8 @@ st.markdown("""
   [data-testid="stMarkdownContainer"] p,
   [data-testid="stMarkdownContainer"] li,
   [data-testid="stMarkdownContainer"] span { color: inherit; }
+  /* Hide sidebar collapse button */
+  [data-testid="collapsedControl"] { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
