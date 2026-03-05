@@ -438,19 +438,39 @@ def page_analyzer():
             st.plotly_chart(fig_s, use_container_width=True)
 
         st.markdown("---")
-        # Generate Report for Download
-        report_text = f"Sentiment Analysis Report - {source_name}\n{'='*50}\n\n"
-        report_text += f"Sentiment Score (Normalized): {sa['log']}\nSentiment Category: {sa['cat']} {sa['emo']}\nRaw AFINN Score: {int(sa['raw'])}\nWord Count: {sa['wc']}\n\n"
-        report_text += f"-- Positive Words --\n{', '.join(sa['pos'])}\n\n-- Negative Words --\n{', '.join(sa['neg'])}\n\n"
-        report_text += f"-- Emotion Breakdown --\n"
-        for e,count in sorted_emo: report_text += f"{EMOTION_META[e]['label']}: {count}\n"
-        
+        # Generate Word (.docx) Report for Download
+        doc = Document()
+        doc.add_heading("Sentiment Analysis Report", 0)
+        doc.add_paragraph(f"Source: {source_name}")
+        doc.add_paragraph("")
+
+        doc.add_heading("Sentiment Summary", level=1)
+        doc.add_paragraph(f"Category:             {sa['cat']} {sa['emo']}")
+        doc.add_paragraph(f"Normalized Score:     {sa['log']}")
+        doc.add_paragraph(f"Raw AFINN Score:      {int(sa['raw'])}")
+        doc.add_paragraph(f"Total Word Count:     {sa['wc']}")
+
+        doc.add_heading("Positive Words", level=1)
+        doc.add_paragraph(", ".join(sa["pos"]) if sa["pos"] else "None detected")
+
+        doc.add_heading("Negative Words", level=1)
+        doc.add_paragraph(", ".join(sa["neg"]) if sa["neg"] else "None detected")
+
+        doc.add_heading("Emotion Breakdown", level=1)
+        for e, count in sorted_emo:
+            doc.add_paragraph(f"{EMOTION_META[e]['emoji']} {EMOTION_META[e]['label']}: {count} word(s)")
+
+        # Save to buffer
+        buf = io.BytesIO()
+        doc.save(buf)
+        buf.seek(0)
+
         # Download Button
         st.download_button(
-            label="📥 Download Detailed Report",
-            data=report_text,
-            file_name=f"Sentiment_Report.txt",
-            mime="text/plain",
+            label="📥 Download Report (.docx)",
+            data=buf,
+            file_name="Sentiment_Report.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             type="primary",
             use_container_width=True
         )
