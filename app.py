@@ -466,7 +466,7 @@ def page_home():
         <div class="card" style="text-align:center"><div style="font-size:3rem">📊</div>
         <h3 style="color:#4e54c8">Version 2.0</h3>
         <hr style="border-color:#f0f0f5">
-        <p style="font-size:.85rem">Built with Python, Streamlit, AFINN-165, NRC Lexicon & Plotly.</p></div>
+        <p style="font-size:.85rem">Built with Python, Streamlit, AFINN-165, NRC Lexicon, Pandas & Plotly.</p></div>
         <div class="card" style="text-align:center"><h4 style="color:#4e54c8">🏆 Key Stats</h4>
         <p><b>3,382</b> AFINN words</p><p><b>8</b> Emotion categories</p>
         <p><b>300+</b> Emotion-mapped words</p><p><b>PDF & DOCX</b> support</p></div>
