@@ -118,7 +118,9 @@ EMOTION_META = {
     "surprise":     {"emoji": "😮", "color": "#fd79a8", "label": "Surprise"},
     "trust":        {"emoji": "🤝", "color": "#00cec9", "label": "Trust"},
     "anticipation": {"emoji": "⏳", "color": "#e17055", "label": "Anticipation"},
-}# ─────────────────────────────────────────────────────────────
+}
+
+
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -177,8 +179,17 @@ st.markdown("""
   [data-testid="stMarkdownContainer"] p,
   [data-testid="stMarkdownContainer"] li,
   [data-testid="stMarkdownContainer"] span { color: inherit; }
-  /* Hide sidebar collapse button */
-  [data-testid="collapsedControl"] { display: none; }
+  /* Keep sidebar always open — hide all collapse/expand toggle buttons */
+  [data-testid="collapsedControl"],
+  button[kind="header"],
+  section[data-testid="stSidebar"] > div:first-child > div > button,
+  .st-emotion-cache-1ihkpx7 { display: none !important; }
+  /* Ensure sidebar itself is never hidden */
+  section[data-testid="stSidebar"] {
+    min-width: 220px !important;
+    transform: none !important;
+    visibility: visible !important;
+  }
 </style>
 """, unsafe_allow_html=True)
 
