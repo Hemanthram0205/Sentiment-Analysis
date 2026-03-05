@@ -3,13 +3,122 @@ from collections import defaultdict
 
 import streamlit as st
 import plotly.graph_objects as go
+import pandas as pd
 from afinn import Afinn
 import pdfplumber
 from docx import Document
 
-from nrc_data import NRC_LEXICON, EMOTION_META
-
 # ─────────────────────────────────────────────────────────────
+# NRC Word-Emotion Association Lexicon
+# ─────────────────────────────────────────────────────────────
+NRC_LEXICON = {
+    "abandon": ["fear","sadness"], "abhor": ["anger","disgust"],
+    "abhorrent": ["anger","disgust"], "abuse": ["anger","disgust","sadness"],
+    "accomplish": ["joy","anticipation","trust"], "achievement": ["joy","anticipation"],
+    "admire": ["joy","trust"], "adore": ["joy","trust"],
+    "adventure": ["anticipation","joy","surprise"], "afraid": ["fear","sadness"],
+    "aggression": ["anger"], "agony": ["sadness","fear"],
+    "alarm": ["fear","surprise"], "amazing": ["joy","surprise"],
+    "anger": ["anger"], "anguish": ["sadness","fear"],
+    "annoy": ["anger","disgust"], "anxiety": ["fear","sadness"],
+    "appalled": ["disgust","anger","surprise"], "appreciate": ["joy","trust"],
+    "aspire": ["anticipation","joy"], "astound": ["surprise","joy"],
+    "attack": ["anger","fear"], "awe": ["surprise","joy","trust"],
+    "awful": ["sadness","disgust"], "bad": ["sadness","disgust"],
+    "beautiful": ["joy","trust"], "beloved": ["joy","trust"],
+    "bereave": ["sadness"], "bereavement": ["sadness","fear"],
+    "betrayal": ["anger","sadness","disgust"], "bewildered": ["surprise","fear"],
+    "bliss": ["joy","trust"], "bold": ["anticipation","trust"],
+    "boring": ["sadness","disgust"], "brave": ["anticipation","trust","joy"],
+    "bravery": ["trust","anticipation"], "calm": ["trust","joy"],
+    "catastrophe": ["fear","sadness","surprise"], "celebrate": ["joy","anticipation"],
+    "chaos": ["fear","anger","surprise"], "charm": ["joy","trust"],
+    "cheat": ["anger","disgust","sadness"], "cheerful": ["joy"],
+    "comfort": ["joy","trust"], "compassion": ["trust","sadness","joy"],
+    "confident": ["trust","anticipation","joy"], "confusion": ["fear","surprise"],
+    "courageous": ["trust","anticipation"], "crime": ["anger","disgust","fear"],
+    "cruel": ["disgust","anger","sadness"], "curious": ["anticipation","surprise","joy"],
+    "danger": ["fear","anticipation"], "death": ["sadness","fear"],
+    "deceit": ["disgust","anger"], "defeat": ["sadness","anger"],
+    "depressed": ["sadness"], "depression": ["sadness","fear"],
+    "desperate": ["fear","sadness","anticipation"], "destroy": ["anger","sadness"],
+    "devastated": ["sadness","surprise"], "devoted": ["joy","trust"],
+    "dirty": ["disgust"], "disappoint": ["sadness","anger"],
+    "disaster": ["fear","sadness","surprise"], "distress": ["sadness","fear"],
+    "doubt": ["fear","sadness"], "dreadful": ["fear","disgust"],
+    "ecstasy": ["joy","surprise"], "effective": ["trust","anticipation"],
+    "empathy": ["trust","sadness","joy"], "encourage": ["trust","anticipation","joy"],
+    "enjoy": ["joy","anticipation"], "enlighten": ["surprise","trust","anticipation"],
+    "enthusiasm": ["joy","anticipation"], "excited": ["joy","anticipation","surprise"],
+    "exhausted": ["sadness"], "fail": ["sadness","anger"],
+    "faithful": ["trust","joy"], "fantastic": ["joy","surprise"],
+    "fear": ["fear"], "fearful": ["fear","sadness"],
+    "fierce": ["anger","anticipation"], "forgive": ["trust","joy"],
+    "fraud": ["disgust","anger"], "free": ["joy","anticipation","trust"],
+    "friendly": ["trust","joy"], "frightened": ["fear","surprise"],
+    "frustrated": ["anger","sadness"], "fun": ["joy","anticipation"],
+    "funny": ["joy","surprise"], "gentle": ["trust","joy"],
+    "glad": ["joy"], "glory": ["joy","trust","anticipation"],
+    "good": ["joy","trust"], "graceful": ["joy","trust"],
+    "grateful": ["joy","trust"], "great": ["joy","anticipation"],
+    "grief": ["sadness","fear"], "growth": ["anticipation","joy","trust"],
+    "guilty": ["sadness","fear"], "happiness": ["joy"],
+    "happy": ["joy"], "harm": ["anger","sadness","fear"],
+    "hate": ["anger","disgust"], "helpless": ["sadness","fear"],
+    "heroic": ["trust","joy","anticipation"], "hopeful": ["anticipation","joy","trust"],
+    "hopeless": ["sadness","fear"], "horrible": ["disgust","fear","sadness"],
+    "hostile": ["anger","disgust"], "humble": ["trust","joy"],
+    "hurt": ["sadness","anger"], "ignorant": ["anger","disgust"],
+    "injustice": ["anger","sadness","disgust"], "inspire": ["joy","anticipation","trust"],
+    "insult": ["anger","disgust","sadness"], "jealous": ["anger","sadness","disgust"],
+    "joyful": ["joy"], "joyous": ["joy","surprise"],
+    "jubilant": ["joy","surprise"], "kind": ["trust","joy"],
+    "kindness": ["trust","joy"], "lazy": ["disgust","sadness"],
+    "lonely": ["sadness"], "love": ["joy","trust","anticipation"],
+    "loyal": ["trust","joy"], "magnificent": ["joy","surprise","trust"],
+    "manipulate": ["anger","disgust"], "melancholy": ["sadness"],
+    "miracle": ["surprise","joy","trust"], "miserable": ["sadness"],
+    "motivated": ["anticipation","joy","trust"], "mourning": ["sadness","fear"],
+    "neglect": ["sadness","anger","disgust"], "nervous": ["fear"],
+    "nightmare": ["fear","sadness"], "optimistic": ["anticipation","joy","trust"],
+    "outstanding": ["joy","surprise","trust"], "overwhelmed": ["fear","surprise","sadness"],
+    "panic": ["fear","surprise"], "passionate": ["joy","anticipation","trust"],
+    "patience": ["trust","anticipation"], "peaceful": ["joy","trust"],
+    "pessimistic": ["sadness","fear"], "powerful": ["trust","anticipation","joy"],
+    "prejudice": ["disgust","anger"], "pride": ["joy","trust","anticipation"],
+    "purposeful": ["anticipation","trust"], "rage": ["anger"],
+    "regret": ["sadness"], "rejected": ["sadness","anger"],
+    "resilient": ["trust","anticipation"], "respect": ["trust","joy"],
+    "restore": ["trust","anticipation","joy"], "ruin": ["sadness","anger","disgust"],
+    "sad": ["sadness"], "sadness": ["sadness"],
+    "selfish": ["disgust","anger"], "shame": ["sadness","fear","disgust"],
+    "shocked": ["surprise","fear"], "sincere": ["trust"],
+    "sorrow": ["sadness"], "stable": ["trust"],
+    "stress": ["fear","anger","sadness"], "struggle": ["sadness","fear","anger"],
+    "success": ["joy","trust","anticipation"], "suffering": ["sadness","fear"],
+    "support": ["trust","joy"], "surprise": ["surprise"],
+    "terror": ["fear"], "thankful": ["joy","trust"],
+    "thoughtful": ["trust","anticipation"], "toxic": ["disgust","anger","sadness"],
+    "tragedy": ["sadness","fear"], "trust": ["trust"],
+    "truthful": ["trust"], "uncertain": ["fear","anticipation"],
+    "unfair": ["anger","sadness","disgust"], "upset": ["sadness","anger"],
+    "valuable": ["trust","anticipation"], "victorious": ["joy","anticipation","trust"],
+    "violence": ["anger","fear","disgust"], "vulnerable": ["fear","sadness"],
+    "warmth": ["joy","trust"], "wonderful": ["joy","surprise","trust"],
+    "worry": ["fear","sadness"], "worthless": ["sadness","disgust"],
+    "zealous": ["anticipation","anger"],
+}
+
+EMOTION_META = {
+    "joy":          {"emoji": "😊", "color": "#f9d71c", "label": "Joy"},
+    "sadness":      {"emoji": "😢", "color": "#74b9ff", "label": "Sadness"},
+    "anger":        {"emoji": "😡", "color": "#ff4757", "label": "Anger"},
+    "fear":         {"emoji": "😨", "color": "#a29bfe", "label": "Fear"},
+    "disgust":      {"emoji": "🤢", "color": "#55efc4", "label": "Disgust"},
+    "surprise":     {"emoji": "😮", "color": "#fd79a8", "label": "Surprise"},
+    "trust":        {"emoji": "🤝", "color": "#00cec9", "label": "Trust"},
+    "anticipation": {"emoji": "⏳", "color": "#e17055", "label": "Anticipation"},
+}# ─────────────────────────────────────────────────────────────
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -104,6 +213,16 @@ def analyze_sentiment(text):
             seen.add(w); (pos if s > 0 else neg).append(w)
     return dict(raw=raw, log=round(log,3), cat=cat, emo=emo, wc=len(words), neg=neg, pos=pos, text=text)
 
+def analyze_sentences(text):
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    sentences = [s for s in sentences if len(tokenize(s)) > 0]
+    if len(sentences) < 2: return None
+    data = []
+    for i, s in enumerate(sentences):
+        sc = afinn_scorer.score(s)
+        data.append({"id": i+1, "text": s, "score": sc})
+    return data
+
 def analyze_emotions(text):
     words = tokenize(text)
     scores = defaultdict(int); wbe = defaultdict(list)
@@ -123,11 +242,11 @@ def chips(words, cls):
 # SIDEBAR NAVIGATION (only when logged in)
 # ─────────────────────────────────────────────────────────────
 PAGES = [
+    ("🏠", "Home"),
     ("📊", "Analyzer"),
-    ("ℹ️", "About"),
     ("🛠️", "Services"),
     ("💬", "Support"),
-    ("🔗", "Connect"),
+    ("📞", "Contact"),
     ("❓", "Help"),
 ]
 
@@ -173,7 +292,7 @@ def page_login():
                     try:    users = dict(st.secrets["users"])
                     except: users = {"demo": "demo123", "admin": "admin123"}
                     if users.get(uname) == pwd:
-                        st.session_state.update(authenticated=True, username=uname, page="Analyzer")
+                        st.session_state.update(authenticated=True, username=uname, page="Home")
                         st.rerun()
                     else:
                         st.error("❌ Invalid credentials.")
@@ -191,7 +310,7 @@ def page_login():
                 elif len(spass) < 8:                          st.error("Password too short.")
                 elif spass != sconf:                          st.error("Passwords don't match.")
                 else:
-                    st.session_state.update(authenticated=True, username=semail.split("@")[0], page="Analyzer")
+                    st.session_state.update(authenticated=True, username=semail.split("@")[0], page="Home")
                     st.rerun()
 
     st.markdown('<div class="footer">© 2026 Sentiment Analyzer Pro</div>', unsafe_allow_html=True)
@@ -289,13 +408,47 @@ def page_analyzer():
                     tags=" ".join(f'<span class="emotion-tag" style="background:{m["color"]}22;color:{m["color"]}">{w}</span>' for w in ws)
                     st.markdown(f'<div style="margin-bottom:.6rem"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af">{m["emoji"]} {m["label"]}</div>{tags}</div>', unsafe_allow_html=True)
 
+        # Sentence-Level Analysis
+        sentences = analyze_sentences(text_to_analyze)
+        if sentences:
+            st.markdown("---")
+            st.markdown("### 📈 Sentence-Level Sentiment Flow")
+            s_df = pd.DataFrame(sentences)
+            fig_s = go.Figure()
+            fig_s.add_trace(go.Bar(
+                x=s_df["id"], y=s_df["score"],
+                text=s_df["text"].str.slice(0, 50) + "...",
+                marker_color=["#2ed573" if s > 0 else "#ff4757" if s < 0 else "#9ca3af" for s in s_df["score"]],
+                hovertemplate="Sentence %{x}<br>Score: %{y}<br>Text: %{text}<extra></extra>"
+            ))
+            fig_s.update_layout(height=250, margin=dict(l=0,r=0,t=30,b=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", xaxis_title="Sentence Sequence", yaxis_title="Sentiment Score")
+            st.plotly_chart(fig_s, use_container_width=True)
+
+        st.markdown("---")
+        # Generate Report for Download
+        report_text = f"Sentiment Analysis Report - {source_name}\n{'='*50}\n\n"
+        report_text += f"Sentiment Score (Normalized): {sa['log']}\nSentiment Category: {sa['cat']} {sa['emo']}\nRaw AFINN Score: {int(sa['raw'])}\nWord Count: {sa['wc']}\n\n"
+        report_text += f"-- Positive Words --\n{', '.join(sa['pos'])}\n\n-- Negative Words --\n{', '.join(sa['neg'])}\n\n"
+        report_text += f"-- Emotion Breakdown --\n"
+        for e,count in sorted_emo: report_text += f"{EMOTION_META[e]['label']}: {count}\n"
+        
+        # Download Button
+        st.download_button(
+            label="📥 Download Detailed Report",
+            data=report_text,
+            file_name=f"Sentiment_Report.txt",
+            mime="text/plain",
+            type="primary",
+            use_container_width=True
+        )
+
     st.markdown('<div class="footer">© 2026 Sentiment Analyzer Pro · AFINN-165 & NRC Emotion Lexicon</div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# PAGE: ABOUT
+# PAGE: HOME
 # ─────────────────────────────────────────────────────────────
-def page_about():
-    st.markdown('<div class="page-hero"><h1>ℹ️ About Us</h1><p>The story behind Sentiment Analyzer Pro</p></div>', unsafe_allow_html=True)
+def page_home():
+    st.markdown('<div class="page-hero"><h1>🏠 Home</h1><p>Welcome to Sentiment Analyzer Pro</p></div>', unsafe_allow_html=True)
     c1,c2 = st.columns([2,1])
     with c1:
         st.markdown("""
@@ -375,10 +528,10 @@ def page_support():
     st.markdown('<div class="footer">© 2026 Sentiment Analyzer Pro</div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
-# PAGE: CONNECT
+# PAGE: CONTACT
 # ─────────────────────────────────────────────────────────────
-def page_connect():
-    st.markdown('<div class="page-hero"><h1>🔗 Connect</h1><p>Stay connected with Sentiment Analyzer Pro</p></div>', unsafe_allow_html=True)
+def page_contact():
+    st.markdown('<div class="page-hero"><h1>📞 Contact</h1><p>Stay connected with Sentiment Analyzer Pro</p></div>', unsafe_allow_html=True)
     c1,c2 = st.columns(2)
     with c1:
         st.markdown("""
@@ -444,11 +597,11 @@ if not st.session_state.get("authenticated"):
     page_login()
 else:
     show_sidebar()
-    current = st.session_state.get("page", "Analyzer")
-    if   current == "Analyzer": page_analyzer()
-    elif current == "About":    page_about()
+    current = st.session_state.get("page", "Home")
+    if   current == "Home":     page_home()
+    elif current == "Analyzer": page_analyzer()
     elif current == "Services": page_services()
     elif current == "Support":  page_support()
-    elif current == "Connect":  page_connect()
+    elif current == "Contact":  page_contact()
     elif current == "Help":     page_help()
-    else:                       page_analyzer()
+    else:                       page_home()
